@@ -1,0 +1,12 @@
+query_groups:
+  - id: finished_result
+    normal: "finished dish showcase or attractive food presentation"
+    strict: "clear complete finished dish filling the frame"
+    broad: "visually attractive food result"
+  - id: texture
+    normal: "food cut open, texture reveal, cheese pull, liquid center"
+  - id: eating
+    normal: "food pickup, bite action, tasting reaction"
+  - id: cooking_motion
+    normal: "sauce pouring, cooking flame, stirring, plating action"
+

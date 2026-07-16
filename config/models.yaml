@@ -1,0 +1,18 @@
+models:
+  video_locator:
+    provider: marlin
+    caption_task: marlin-caption
+    find_task: marlin-find
+  video_reviewer:
+    provider: openai_compatible
+    model_env: GEMMA_MODEL
+  frame_reviewer:
+    provider: qwen
+    enabled: false
+  plan_reviewer:
+    provider: deepseek
+    invoke: on_validation_failure
+  voiceover:
+    provider: omnivoice
+    fallback: voxcpm
+

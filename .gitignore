@@ -1,0 +1,16 @@
+.env
+.pixi/
+__pycache__/
+*.pyc
+.DS_Store
+data/materials/**
+data/music/**
+data/cache/**
+data/runs/**
+data/deliveries/**
+!data/materials/.gitkeep
+!data/music/.gitkeep
+!data/cache/.gitkeep
+!data/runs/.gitkeep
+!data/deliveries/.gitkeep
+

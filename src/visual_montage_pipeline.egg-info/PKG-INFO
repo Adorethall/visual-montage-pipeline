@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: visual-montage-pipeline
+Version: 0.1.0
+Summary: Category-aware, music-driven visual ad montage pipeline
+Requires-Python: <3.13,>=3.12
+Requires-Dist: hatchet-sdk<2,>=1.33.6
+Requires-Dist: httpx<0.29,>=0.28
+Requires-Dist: pydantic<3,>=2.10
+Requires-Dist: pydantic-settings<3,>=2.7
+Requires-Dist: python-dotenv<2,>=1.0
+Requires-Dist: pyyaml<7,>=6
+Requires-Dist: boto3<2,>=1.35
+Requires-Dist: pillow<13,>=11
+Requires-Dist: pymediainfo<8,>=7

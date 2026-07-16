@@ -1,0 +1,18 @@
+campaign_id: beauty_zh_001
+category: beauty
+language: zh-CN
+duration_seconds: 20
+aspect_ratio: "9:16"
+product_demo:
+  openpage_asset_id: app_openpage_zh_vertical
+  recording_asset_id: beauty_search_zh
+brand:
+  logo_asset_id: logo_white
+  endcard_asset_id: endcard_zh
+copy:
+  hook: 今天想换个妆感？
+  brand_message: 发现更多美妆灵感
+  cta: 立即下载
+voiceover:
+  text: 打开App，发现更多美妆灵感。搜索喜欢的妆容，把想学的技巧随时收藏下来。
+

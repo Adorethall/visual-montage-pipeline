@@ -1,0 +1,12 @@
+query_groups:
+  - id: finished_result
+    normal: "finished makeup reveal, complete makeup look, visible after result"
+    strict: "person clearly showing a completed full-face makeup result"
+    broad: "visually attractive makeup result or beauty pose"
+  - id: pose_motion
+    normal: "face turn, beauty pose, hair movement showing makeup"
+  - id: detail
+    normal: "clear eye makeup, lip makeup, or skin finish close-up"
+  - id: transformation
+    normal: "before and after makeup transformation or reveal"
+

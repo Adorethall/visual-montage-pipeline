@@ -1,0 +1,181 @@
+schema_version: "1.0"
+
+product_openpages:
+  - asset_id: rednote_openpage_zh_vertical
+    type: product_openpage
+    path: data/assets/product-openpages/开屏_中文.mov
+    language: zh-CN
+    aspect_ratio: "9:16"
+    width: 720
+    height: 1280
+    fps: 30
+    duration_seconds: 1.533
+    mandatory: true
+    audio_policy: preserve
+
+product_recordings:
+  - asset_id: rednote_beauty_recording_zh
+    type: product_recording
+    path: data/assets/product-recordings/彩妆.mp4
+    category: beauty
+    language: zh-CN
+    aspect_ratio: "9:16"
+    width: 720
+    height: 1280
+    fps: 30
+    duration_seconds: 14.721
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [result_browsing]
+    requires_safe_trim_review: true
+
+  - asset_id: rednote_travel_recording_zh
+    type: product_recording
+    path: data/assets/product-recordings/出行攻略.mp4
+    category: travel
+    language: zh-CN
+    aspect_ratio: "9:16"
+    width: 720
+    height: 1280
+    fps: 30
+    duration_seconds: 17.578
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [result_browsing]
+    requires_safe_trim_review: true
+
+  - asset_id: rednote_home_recording_zh
+    type: product_recording
+    path: data/assets/product-recordings/家居用品.mp4
+    category: home
+    language: zh-CN
+    aspect_ratio: "9:16"
+    width: 720
+    height: 1280
+    fps: 30
+    duration_seconds: 31.858
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [result_browsing]
+    requires_safe_trim_review: true
+
+  - asset_id: rednote_graduation_recording_zh
+    type: product_recording
+    path: data/assets/product-recordings/毕业季.mp4
+    category: graduation
+    language: zh-CN
+    aspect_ratio: "9:16"
+    width: 720
+    height: 1280
+    fps: 30
+    duration_seconds: 11.912
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [result_browsing]
+    requires_safe_trim_review: true
+
+brand_assets:
+  - asset_id: rednote_logo_white_vertical
+    type: logo_overlay
+    path: data/assets/brand/logos/竖版白字-角标位置空间.png
+    aspect_ratio: "9:16"
+    color_variant: white
+
+  - asset_id: rednote_logo_black_vertical
+    type: logo_overlay
+    path: data/assets/brand/logos/竖版黑字-角标位置空间.png
+    aspect_ratio: "9:16"
+    color_variant: black
+
+  - asset_id: rednote_logo_white_vertical_animated
+    type: logo_overlay_video
+    path: data/assets/brand/logos/竖版动态白字-rednote.mov
+    aspect_ratio: "9:16"
+    color_variant: white
+    duration_seconds: 30.0
+
+  - asset_id: rednote_logo_black_vertical_animated
+    type: logo_overlay_video
+    path: data/assets/brand/logos/竖版动态黑字-rednote.mov
+    aspect_ratio: "9:16"
+    color_variant: black
+    duration_seconds: 30.0
+
+  - asset_id: rednote_endcard_vertical
+    type: endcard
+    path: data/assets/brand/endcards/竖版_尾贴.mov
+    language: zh-CN
+    aspect_ratio: "9:16"
+    duration_seconds: 5.0
+    recommended_trim_seconds: 2.5
+
+  - asset_id: rednote_endcard_vertical_png
+    type: endcard_image
+    path: data/assets/brand/endcards/竖版-尾贴.png
+    language: zh-CN
+    aspect_ratio: "9:16"
+
+overlay_assets:
+  - asset_id: rednote_search_box_zh
+    type: search_overlay
+    path: data/assets/overlays/搜索框.png
+    language: zh-CN
+
+  - asset_id: rednote_search_box_en
+    type: search_overlay
+    path: data/assets/overlays/搜索英文.png
+    language: en
+
+fonts:
+  - asset_id: douyin_sans_bold_zh
+    path: data/assets/brand/fonts/中文_抖音美好体/DouyinSansBold.ttf
+    language: zh
+    usage: [cover_title, hook, subtitle, cta]
+
+  - asset_id: helvetica_now_display_black
+    path: data/assets/brand/fonts/英文_1/HelveticaNowDisplayBlack.ttf
+    language: en
+    usage: [cover_title, hook, cta]
+
+  - asset_id: din_ot_black
+    path: data/assets/brand/fonts/英文_2/DINOT-Black.ttf
+    language: en
+    usage: [cover_title, hook, cta]
+
+category_defaults:
+  beauty:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_beauty_recording_zh
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: douyin_sans_bold_zh
+
+  travel:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_travel_recording_zh
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: douyin_sans_bold_zh
+
+  home:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_home_recording_zh
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: douyin_sans_bold_zh
+
+  graduation:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_graduation_recording_zh
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: douyin_sans_bold_zh
+
+known_gaps:
+  - category: food
+    missing: product_recording
+    impact: Food ads cannot pass mandatory packaging validation until a food-specific or approved generic recording is added.

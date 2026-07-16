@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visual Highlight Montage"
+  short_description: "Build category-aware visual ads with editable covers"
+  default_prompt: "Use $visual-highlight-montage to build a music-driven packaged visual montage from my videos."

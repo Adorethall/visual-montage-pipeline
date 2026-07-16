@@ -1,0 +1,23 @@
+schema_version: "1.0"
+category_id: food
+display_name: 美食展示
+aliases: [美食, 美食展示, 菜谱, food]
+preferred_events:
+  finished_dish_showcase: 1.0
+  texture_reveal: 1.0
+  stretch_pull: 0.95
+  food_pickup: 0.9
+  bite_action: 0.88
+  pouring_action: 0.82
+  cooking_flame: 0.8
+  plating_motion: 0.72
+  tasting_reaction: 0.7
+penalized_events:
+  talking_head: 0.75
+  ingredient_waiting: 0.7
+  long_recipe_explanation: 0.65
+clip_duration: {minimum: 0.7, preferred: 1.3, maximum: 2.6}
+opening_events: [texture_reveal, stretch_pull, finished_dish_showcase]
+cover_events: [finished_dish_showcase, texture_reveal, stretch_pull]
+cover_title_strategies: [sensory_hook, question, collection]
+

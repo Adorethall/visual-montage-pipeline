@@ -1,0 +1,39 @@
+[project]
+name = "visual-montage-pipeline"
+version = "0.1.0"
+description = "Category-aware, music-driven visual ad montage pipeline"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "hatchet-sdk>=1.33.6,<2",
+  "httpx>=0.28,<0.29",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3",
+  "python-dotenv>=1.0,<2",
+  "pyyaml>=6,<7", "boto3>=1.35,<2", "pillow>=11,<13", "pymediainfo>=7,<8",
+]
+
+[project.scripts]
+visual-montage = "visual_montage.cli:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pixi.workspace]
+channels = ["https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[tool.pixi.dependencies]
+python = ">=3.12,<3.13"
+ffmpeg = ">=7,<9"
+
+[tool.pixi.pypi-dependencies]
+visual-montage-pipeline = { path = ".", editable = true }
+pytest = ">=8,<9"
+
+[tool.pixi.tasks]
+test = "pytest -q"
+validate-config = "visual-montage validate-config"

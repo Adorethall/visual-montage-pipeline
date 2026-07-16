@@ -1,0 +1,48 @@
+campaign_id: rednote_beauty_zh_20s
+category: beauty
+language: zh-CN
+market: CN
+duration_seconds: 20
+aspect_ratio: "9:16"
+package_mode: standard_ad
+
+product_demo:
+  required: true
+  openpage_asset_id: rednote_openpage_zh_vertical
+  recording_asset_id: rednote_beauty_recording_zh
+
+brand:
+  logo_asset_id: rednote_logo_white_vertical
+  animated_logo_asset_id: rednote_logo_white_vertical_animated
+  cover_logo_asset_id: rednote_logo_white_vertical
+  endcard_asset_id: rednote_endcard_vertical
+
+copy:
+  hook: 今天想换个妆感？
+  brand_message: 发现更多美妆灵感
+  cta: 立即下载
+  mandatory_copy: []
+  prohibited_claims: []
+
+voiceover:
+  required: true
+  provider: omnivoice
+  fallback_provider: voxcpm
+  language: zh-CN
+  voice: "female, young adult, natural, energetic, clear"
+  speed: 1.0
+  text: 打开Rednote，发现更多美妆灵感。搜索喜欢的妆容，把想学的技巧随时收藏下来。
+  start_section: product_openpage
+  start_offset_seconds: 0.15
+  maximum_duration_seconds: 8.0
+  maximum_overflow_into_second_montage_seconds: 3.0
+
+cover:
+  required: true
+  editable_title: true
+  font_asset_id: douyin_sans_bold_zh
+
+audio:
+  preserve_selected_source_effects: true
+  voiceover_ducking_db: -7
+  fade_out_seconds: 0.5

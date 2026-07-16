@@ -1,0 +1,109 @@
+schema_version: "1.0"
+category_id: beauty
+display_name: 彩妆
+aliases: [彩妆, 美妆, 化妆品, makeup, beauty]
+preferred_events:
+  finished_makeup_reveal: 1.0
+  before_after_transition: 1.0
+  face_turn: 0.92
+  eye_makeup_closeup: 0.88
+  lip_makeup_closeup: 0.86
+  skin_finish_closeup: 0.86
+  hair_motion: 0.75
+  product_pose: 0.65
+  application_gesture: 0.55
+penalized_events:
+  talking_head: 0.8
+  slow_application: 0.5
+  packaging_only: 0.6
+clip_duration: {minimum: 0.7, preferred: 1.4, maximum: 2.8}
+opening_events: [finished_makeup_reveal, before_after_transition, face_turn]
+cover_events: [finished_makeup_reveal, face_turn, eye_makeup_closeup]
+cover_title_strategies: [question_to_choice, result_collection, inspiration]
+
+# Gemma 全视频审片的结构化规则。这里只放可供脚本读取的画面词表、
+# 阈值和输出约束；完整自然语言提示词位于 prompts/gemma-review/beauty.md。
+gemma_review:
+  prompt_path: prompts/gemma-review/beauty.md
+  candidate_count: {minimum: 1, maximum: 4}
+  candidate_duration: {minimum: 1.0, preferred: 2.0, maximum: 3.5}
+  default_event: finished_makeup_reveal
+  events:
+    finished_makeup_reveal:
+      label: 完整妆容展示
+      keywords: [完整妆容, 全脸妆效, 成妆亮相, finished makeup, full-face reveal]
+    face_turn:
+      label: 转脸或姿态展示
+      keywords: [转脸, 回眸, 摆姿, 甩发, face turn, beauty pose, hair movement]
+    eye_makeup_closeup:
+      label: 眼妆特写
+      keywords: [眼妆, 眼影, 眼线, 睫毛, eye makeup, eye close-up]
+    lip_makeup_closeup:
+      label: 唇妆特写
+      keywords: [唇妆, 口红, 唇釉, 唇部特写, lip makeup, lip close-up]
+    skin_finish_closeup:
+      label: 底妆或肤质特写
+      keywords: [底妆, 肤质, 光泽肌, 哑光肌, skin finish, complexion close-up]
+    before_after_transition:
+      label: 妆前妆后变化
+      keywords: [妆前妆后, 前后对比, 变妆, transformation, before and after]
+    product_result_pose:
+      label: 产品与妆效同框
+      keywords: [产品妆效同框, 手持产品展示妆效, product and result, product result pose]
+  positive_visual_keywords:
+    - visually self-contained
+    - completed look
+    - clear face
+    - strong beauty composition
+    - visible makeup detail
+    - transformation payoff
+    - confident pose
+    - face turn
+    - hair movement
+    - product-and-result moment
+  negative_visual_keywords:
+    - talking head
+    - slow explanation
+    - repetitive application
+    - tutorial filler
+    - packaging-only shot
+    - subtitles covering the subject
+    - blurred frame
+    - closed eyes
+    - transition frame
+    - incomplete action
+
+# Marlin 只负责长视频事件召回，结果必须交给 Gemma 复核。
+marlin_recall:
+  enabled: true
+  minimum_video_duration_seconds: 30.0
+  query_path: prompts/marlin-events/beauty.yaml
+  query_variant: normal
+  max_query_groups: 4
+  fail_open: true
+  upload_prefix: visual-montage/marlin-inputs
+  presigned_url_expires_seconds: 86400
+
+contact_sheet:
+  enabled: true
+  columns: 4
+  thumbnail_width: 320
+  thumbnail_height: 480
+  label_height: 86
+  jpeg_quality: 88
+  background_color: "#151515"
+  label_color: "#F5F5F5"
+  secondary_label_color: "#B8B8B8"
+
+batch_generation:
+  history:
+    enabled: true
+    registry_path: data/catalog/candidate-registry.sqlite
+  diversity:
+    candidate_max_global_uses_per_batch: 1
+    source_max_per_video: 2
+    source_max_global_uses: 3
+    previous_batch_penalty: 1.0
+    historical_use_penalty: 0.3
+    maximum_pairwise_candidate_overlap_ratio: 0.2
+    minimum_never_used_candidate_ratio: 0.8

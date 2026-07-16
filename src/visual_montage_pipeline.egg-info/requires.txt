@@ -1,0 +1,9 @@
+hatchet-sdk<2,>=1.33.6
+httpx<0.29,>=0.28
+pydantic<3,>=2.10
+pydantic-settings<3,>=2.7
+python-dotenv<2,>=1.0
+pyyaml<7,>=6
+boto3<2,>=1.35
+pillow<13,>=11
+pymediainfo<8,>=7

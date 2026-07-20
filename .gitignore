@@ -1,16 +1,105 @@
+# Secrets and machine-local configuration
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python / Pixi environments
 .pixi/
+.venv/
+venv/
+env/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Test, type-checker and coverage caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# IDE and operating-system files
 .DS_Store
-data/materials/**
-data/music/**
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.pid
+
+# Runtime caches, outputs and deliveries
 data/cache/**
 data/runs/**
 data/deliveries/**
-!data/materials/.gitkeep
-!data/music/.gitkeep
+data/materials/**
+data/music/**
 !data/cache/.gitkeep
 !data/runs/.gitkeep
 !data/deliveries/.gitkeep
+!data/materials/.gitkeep
+!data/music/.gitkeep
 
+# Candidate/BGM usage databases and their SQLite sidecars
+data/catalog/*.sqlite
+data/catalog/*.sqlite-*
+data/catalog/*.db
+data/catalog/*.db-*
+
+# Real manifests may contain absolute local paths and creator information.
+# Commit only sanitized examples.
+data/inputs/manifests/*
+!data/inputs/manifests/*.example.csv
+!data/inputs/manifests/.gitkeep
+
+# Local or licensed advertising assets. Keep the registry/configuration only.
+data/assets/**/*.mp4
+data/assets/**/*.mov
+data/assets/**/*.m4v
+data/assets/**/*.avi
+data/assets/**/*.mkv
+data/assets/**/*.webm
+data/assets/**/*.wav
+data/assets/**/*.mp3
+data/assets/**/*.m4a
+data/assets/**/*.aac
+data/assets/**/*.flac
+data/assets/**/*.png
+data/assets/**/*.jpg
+data/assets/**/*.jpeg
+data/assets/**/*.webp
+data/assets/**/*.gif
+data/assets/**/*.ttf
+data/assets/**/*.otf
+data/assets/**/*.woff
+data/assets/**/*.woff2
+
+# JianYing drafts and exported media if copied into the repository
+**/com.lveditor.draft/
+**/JianyingPro/
+exports/
+renders/
+
+# Local analysis/debug payloads
+gemma_response*.json
+contact-sheet*.jpg
+candidate-pool*.json

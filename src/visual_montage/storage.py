@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import boto3
+import httpx
 from botocore.client import Config
 
 
@@ -26,7 +27,11 @@ class StorageClient:
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name=self.region,
-            config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+            config=Config(
+                signature_version="s3v4",
+                s3={"addressing_style": "path"},
+                proxies={},
+            ),
         )
 
     def upload_for_worker(self, source: Path, key: str, expires_in: int) -> dict[str, str]:
@@ -37,6 +42,35 @@ class StorageClient:
             ExpiresIn=expires_in,
         )
         return {"object_path": f"s3://{self.bucket}/{key}", "public_url": url}
+
+    def download_url(self, url: str, destination: Path) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with httpx.stream("GET", url, timeout=300) as response:
+            response.raise_for_status()
+            with destination.open("wb") as handle:
+                for chunk in response.iter_bytes():
+                    handle.write(chunk)
+
+    def download_object_path(self, object_path: str, destination: Path) -> None:
+        if not object_path.startswith("s3://"):
+            raise ValueError(f"unsupported object path: {object_path}")
+        bucket, key = object_path[5:].split("/", 1)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        self._client.download_file(bucket, key, str(destination))
+
+    def download_result(
+        self,
+        *,
+        public_url: str | None,
+        object_path: str | None,
+        destination: Path,
+    ) -> None:
+        if public_url:
+            self.download_url(public_url, destination)
+        elif object_path:
+            self.download_object_path(object_path, destination)
+        else:
+            raise ValueError("remote result has no downloadable path")
 
 
 @lru_cache(maxsize=1)

@@ -1,0 +1,70 @@
+campaign_id: rednote_food_en_20s
+category: food
+language: en-US
+market: Global
+duration_seconds: 20
+aspect_ratio: "9:16"
+package_mode: standard_ad
+
+product_demo:
+  required: true
+  openpage_asset_id: rednote_openpage_zh_vertical
+  recording_asset_id: rednote_food_recording_en
+
+brand:
+  logo_asset_id: rednote_logo_white_vertical
+  animated_logo_asset_id: rednote_logo_white_vertical_animated
+  cover_logo_asset_id: rednote_logo_white_vertical
+  endcard_asset_id: rednote_endcard_vertical
+
+copy:
+  hook: What are you craving today?
+  brand_message: Discover endless food inspiration
+  cta: Download now
+  mandatory_copy: []
+  prohibited_claims:
+    - best food ever
+    - #1 recipe
+    - guaranteed results
+    - lose weight fast
+
+voiceover:
+  required: true
+  provider: omnivoice
+  fallback_provider: voxcpm
+  language: en-US
+  voice: "female, young adult, natural, energetic, warm, clear"
+  speed: 1.0
+  text: Open rednote,discover endless food inspiration. Find delicious ideas from real creators.
+  start_section: product_openpage
+  start_offset_seconds: 0.15
+  maximum_duration_seconds: 8.0
+  maximum_overflow_into_second_montage_seconds: 3.0
+
+cover:
+  required: true
+  editable_title: true
+  font_asset_id: douyin_sans_bold_zh
+  title_style:
+    font_size: 14.0
+    color: "#FFFFFF"
+    align: center
+    auto_wrapping: true
+    line_spacing: 2.0
+    border_enabled: false
+    transform_y: -0.50
+    preview_center_y_ratio: 0.23
+    shadow:
+      color: "#000000"
+      alpha: 0.58
+      diffuse: 10.0
+      distance: 7.0
+      angle: -90.0
+
+audio:
+  preserve_selected_source_effects: true
+  voice_target_mean_db: -16
+  voice_peak_ceiling_db: -1
+  bgm_target_mean_db: -20
+  voiceover_margin_db: 12
+  fade_out_seconds: 0.5

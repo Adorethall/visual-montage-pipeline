@@ -25,7 +25,14 @@ cover_title_strategies: [question_to_choice, result_collection, inspiration]
 # 阈值和输出约束；完整自然语言提示词位于 prompts/gemma-review/beauty.md。
 gemma_review:
   prompt_path: prompts/gemma-review/beauty.md
-  candidate_count: {minimum: 1, maximum: 4}
+  api_max_attempts: 3
+  api_max_concurrency: 5
+  api_retry_delays_seconds: [2.0, 5.0]
+  minimum_candidates_per_video: 3
+  candidate_topup_attempts: 2
+  hard_filters:
+    reject_chinese_subtitles: true
+  candidate_count: {minimum: 3, maximum: 8}
   candidate_duration: {minimum: 1.0, preferred: 2.0, maximum: 3.5}
   default_event: finished_makeup_reveal
   events:
@@ -77,9 +84,16 @@ gemma_review:
 marlin_recall:
   enabled: true
   minimum_video_duration_seconds: 30.0
+  maximum_video_duration_seconds: 120.0
+  segment_duration_seconds: 115.0
+  segment_overlap_seconds: 5.0
   query_path: prompts/marlin-events/beauty.yaml
   query_variant: normal
   max_query_groups: 4
+  gemma_review_context_seconds: 1.5
+  gemma_review_max_window_seconds: 12.0
+  gemma_review_max_windows: 12
+  gemma_review_max_recall_span_seconds: 30.0
   fail_open: true
   upload_prefix: visual-montage/marlin-inputs
   presigned_url_expires_seconds: 86400
@@ -95,15 +109,38 @@ contact_sheet:
   label_color: "#F5F5F5"
   secondary_label_color: "#B8B8B8"
 
+audio_bgm_analysis:
+  enabled: true
+  minimum_bgm_duration_seconds: 5.0
+  remote_enrichment: true
+  fail_open: true
+  target_window_seconds: 20
+  allowed_audio_types:
+    - instrumental
+    - song_with_lyrics
+    - rap_song
+    - music_with_spoken_overlay
+  minimum_music_score: 0.68
+  maximum_speech_risk: 0.18
+  minimum_separation_quality: 0.75
+  preferred_bpm: {minimum: 105, target: 122, maximum: 135}
+  same_bgm_max_per_batch: 2
+
 batch_generation:
+  cover_titles:
+    - 今天想换哪种妆感
+    - 这组妆容灵感请收好
+    - 不同妆感一次看够
+    - 今日份成妆灵感合集
+    - 找到适合你的那款妆感
   history:
     enabled: true
     registry_path: data/catalog/candidate-registry.sqlite
   diversity:
-    candidate_max_global_uses_per_batch: 1
+    candidate_max_global_uses_per_batch: 4
     source_max_per_video: 2
-    source_max_global_uses: 3
-    previous_batch_penalty: 1.0
-    historical_use_penalty: 0.3
+    source_max_global_uses: 12
+    previous_batch_penalty: 0.6
+    historical_use_penalty: 0.15
     maximum_pairwise_candidate_overlap_ratio: 0.2
     minimum_never_used_candidate_ratio: 0.8

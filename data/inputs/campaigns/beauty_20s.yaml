@@ -1,7 +1,7 @@
-campaign_id: rednote_beauty_zh_20s
+campaign_id: rednote_beauty_en_20s
 category: beauty
-language: zh-CN
-market: CN
+language: en-US
+market: Global
 duration_seconds: 20
 aspect_ratio: "9:16"
 package_mode: standard_ad
@@ -9,18 +9,20 @@ package_mode: standard_ad
 product_demo:
   required: true
   openpage_asset_id: rednote_openpage_zh_vertical
-  recording_asset_id: rednote_beauty_recording_zh
+  recording_asset_id: rednote_beauty_recording_en
 
 brand:
   logo_asset_id: rednote_logo_white_vertical
   animated_logo_asset_id: rednote_logo_white_vertical_animated
   cover_logo_asset_id: rednote_logo_white_vertical
   endcard_asset_id: rednote_endcard_vertical
+  endcard_freeze_last_seconds: 0.0
+  logo_end_guard_seconds: 0.0
 
 copy:
-  hook: 今天想换个妆感？
-  brand_message: 发现更多美妆灵感
-  cta: 立即下载
+  hook: Ready to try a new makeup look?
+  brand_message: Discover more beauty inspiration
+  cta: Download now
   mandatory_copy: []
   prohibited_claims: []
 
@@ -28,10 +30,10 @@ voiceover:
   required: true
   provider: omnivoice
   fallback_provider: voxcpm
-  language: zh-CN
+  language: en-US
   voice: "female, young adult, natural, energetic, clear"
   speed: 1.0
-  text: 打开Rednote，发现更多美妆灵感。搜索喜欢的妆容，把想学的技巧随时收藏下来。
+  text: Open Rednote and discover more beauty inspiration. Find makeup looks you love and save the tips you want to try anytime.
   start_section: product_openpage
   start_offset_seconds: 0.15
   maximum_duration_seconds: 8.0
@@ -40,9 +42,28 @@ voiceover:
 cover:
   required: true
   editable_title: true
-  font_asset_id: douyin_sans_bold_zh
+  font_asset_id: helvetica_now_display_black
+  title_style:
+    font_size: 14.0
+    color: "#FFFFFF"
+    align: center
+    auto_wrapping: true
+    line_spacing: 2.0
+    border_enabled: false
+    transform_y: -0.50
+    preview_center_y_ratio: 0.23
+    shadow:
+      color: "#000000"
+      alpha: 0.58
+      diffuse: 10.0
+      distance: 7.0
+      angle: -90.0
 
 audio:
   preserve_selected_source_effects: true
-  voiceover_ducking_db: -7
+  voice_target_mean_db: -16
+  voice_peak_ceiling_db: -1
+  bgm_target_mean_db: -20
+  voiceover_margin_db: 12
+  bgm_end_guard_seconds: 0.04
   fade_out_seconds: 0.5

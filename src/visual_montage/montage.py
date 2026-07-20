@@ -25,6 +25,13 @@ def build_slots(start: float, end: float, beats: list[float], target: float = 1.
             cursor = point
     if end - cursor >= 0.6:
         slots.append(Slot(round(cursor, 3), round(end, 3)))
+    elif slots and slots[-1].end < end:
+        # Never leave a black gap just because the final beat remainder is
+        # shorter than the preferred minimum clip duration. Extend the last
+        # slot to the fixed package boundary instead.
+        slots[-1] = Slot(slots[-1].start, round(end, 3))
+    elif not slots and end > start:
+        slots.append(Slot(round(start, 3), round(end, 3)))
     return slots
 
 
@@ -62,10 +69,20 @@ def assign_candidates(
 def validate_timeline(items: list[TimelineItem], duration: float, tolerance: float = 0.1) -> list[str]:
     errors: list[str] = []
     ordered = sorted(items, key=lambda item: item.start)
+    if ordered and ordered[0].start > 0.001:
+        errors.append(f"timeline starts with gap: 0/{ordered[0].start:.3f}")
     for left, right in zip(ordered, ordered[1:]):
         if right.start < left.end - 0.001:
             errors.append(f"overlap: {left.timeline_id}/{right.timeline_id}")
+        elif right.start > left.end + 0.001:
+            errors.append(
+                f"gap: {left.timeline_id}/{right.timeline_id} "
+                f"{left.end:.3f}-{right.start:.3f}"
+            )
     if ordered and ordered[-1].end > duration + tolerance:
         errors.append("timeline exceeds campaign duration")
+    elif ordered and ordered[-1].end < duration - 0.001:
+        errors.append(
+            f"timeline ends with gap: {ordered[-1].end:.3f}/{duration:.3f}"
+        )
     return errors
-

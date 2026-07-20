@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from .models import Campaign, TimelineItem
 
 
@@ -35,7 +37,11 @@ def validate_package(campaign: Campaign, items: list[TimelineItem]) -> list[str]
             errors.append("product openpage must immediately precede product recording")
     if not campaign.voiceover_text.strip():
         errors.append("continuous two-sentence product voiceover is required")
-    if len([x for x in campaign.voiceover_text.replace("！", "。").replace("？", "。").split("。") if x.strip()]) < 2:
+    sentences = [
+        text.strip()
+        for text in re.split(r"[。！？.!?]+", campaign.voiceover_text)
+        if text.strip()
+    ]
+    if len(sentences) < 2:
         errors.append("voiceover must contain at least two sentences")
     return errors
-

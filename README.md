@@ -11,6 +11,59 @@ cp .env.example .env
 
 配置 `.env` 中的 Hatchet、Gemma及剪映路径。远程媒体能力通过 `src/worker_stubs` 中的Hatchet任务契约调用。
 
+## 当前Beauty全流程
+
+当前 `beauty.csv` 有15条启用素材。执行一次完整Beauty流程并输出1个剪映工程：
+
+```bash
+pixi run visual-montage batch-run \
+  --manifest data/inputs/manifests/beauty.csv \
+  --category beauty \
+  --limit 15 \
+  --count 1 \
+  --campaign data/inputs/campaigns/beauty_20s.yaml \
+  --profile profiles/categories/beauty.yaml \
+  --asset-library data/assets/asset-library.yaml \
+  --registry data/catalog/candidate-registry.sqlite \
+  --voiceover-mode regenerate \
+  --force-audio \
+  --run-id beauty-full-v1
+```
+
+完整执行链路：
+
+```text
+读取Manifest
+→ 视频分析缓存检查
+→ FFmpeg低成本代理
+→ 短视频Gemma全片审阅
+→ 长视频Marlin召回 + Gemma复核
+→ 高光候选登记与跨批次去重
+→ 素材音频抽取、YAMNet和BGM入库
+→ 自动选择未重复且适合Beauty节奏的BGM
+→ 生成N套低重复剪辑方案
+→ 产品开屏、录屏、尾贴和Logo包装
+→ OmniVoice生成连续口播，失败回退VoxCPM
+→ MOSS ASR + 真实气口检测生成多段字幕
+→ 口播期间BGM自动降低
+→ 封面抽帧、标题和PNG Logo
+→ 输出并验证剪映工程
+→ 成功后提交候选与BGM使用记录
+```
+
+常用控制参数：
+
+```text
+--count 5                 输出5套低重复工程
+--force-analysis          忽略视频分析缓存
+--force-audio             只重跑素材音频分析
+--cache-only              禁止远程分析，只允许使用缓存
+--voiceover-mode cached   优先复用TTS缓存
+--voiceover-mode regenerate 强制重生成TTS
+--music-analysis FILE     不自动选歌，改用指定BGM分析文件
+--voiceover-audio FILE    不生成TTS，改用指定口播文件
+```
+
 ## 输入与调用
 
 复制并编辑 `data/inputs/manifests/materials.example.csv` 和 `data/inputs/campaigns/beauty_20s.example.yaml`。Manifest视频必须使用绝对路径；Campaign必须声明产品开屏、录屏、尾贴和一条至少包含两句话的连续口播。
@@ -55,7 +108,17 @@ visual-montage cover-metadata \
 17.5–20.0 尾贴和CTA
 ```
 
-口播从产品开屏开始，连续覆盖录屏，最多延伸到第二段高光3秒。音频一次生成，字幕按句拆分，BGM执行一次连续ducking。
+口播从产品开屏开始，连续覆盖录屏，最多延伸到第二段高光3秒。音频只生成
+一条连续文件，字幕拆成多条原生可编辑文字段。口播期间BGM按Campaign配置
+降低音量，口播结束后恢复，并保持音乐源时间连续。
+
+Beauty当前配置：
+
+```text
+口播开始：7.2秒
+BGM ducking：-7 dB
+口播区间BGM音量：约0.4467
+```
 
 ## 封面
 
@@ -107,6 +170,14 @@ Marlin只负责候选召回：Gemma复核事件真实性；过宽窗口通过密
 `data/catalog/candidate-registry.sqlite`。候选ID由品类、视频ID和标准化时间段
 生成；重复分析同一时间段会更新原记录，不会创建一份新的历史资产。
 
+导入分析功能上线前已经生成的候选池：
+
+```bash
+pixi run visual-montage candidate-register \
+  --candidate-pool data/runs/beauty-analysis-5/candidate-pool.json \
+  --category beauty
+```
+
 一次生成5套低重复方案：
 
 ```bash
@@ -141,6 +212,161 @@ pixi run visual-montage candidate-finalize \
 每批输出 `diversity-report.json`，包含候选重复率、来源重复率、首镜头是否重复、
 未使用候选占比和每条方案的完整路径。产品开屏、录屏、Logo和尾贴不计入高光
 重复率。候选不足时方案标记为 `partial`，不会用弱镜头强行填满。
+
+## 视频分析缓存
+
+默认分析会根据源视频指纹、品类配置、Gemma提示词、模型ID、Marlin查询配置、
+代理参数和分析流程版本查询 SQLite 缓存。完全匹配时跳过 FFmpeg 代理、Marlin
+和 Gemma，直接复用候选；当前 Run 仍会重新输出 raw JSON、候选池和 contact
+sheet。
+
+忽略缓存并强制重新分析：
+
+```bash
+pixi run python scripts/analyze_visual_batch.py ... --force
+```
+
+只允许读取缓存，缓存缺失时立即失败，不产生远程调用：
+
+```bash
+pixi run python scripts/analyze_visual_batch.py ... --cache-only
+```
+
+视频文件、profile、提示词、模型、Marlin查询或代理设置任一发生变化，都会生成
+新的缓存键并重新分析。
+
+## 一键批量生成剪映草稿
+
+`batch-run` 串联分析缓存、候选登记、跨批次去重、广告包装、封面和剪映导出。
+不传口播音频时自动生成或复用TTS缓存；同一批草稿复用一份连续口播，不会为
+每个草稿重复调用TTS。
+
+视频分析同时提取素材音轨。检测到音乐后，系统使用YAMNet识别音乐、说话、
+歌唱和Rap，按需调用Audio Separator分离人声与伴奏，并对人声Stem执行ASR。
+带歌词歌曲和Rap允许进入BGM库；音乐上叠加持续口播时只允许使用分离后的伴奏；
+纯口播、环境声和判断不明确的音频不会自动入选。
+
+不传 `--music-analysis` 时，`batch-run` 从 SQLite BGM库按音乐分、Beauty BPM
+匹配、口播风险、音频指纹和历史使用次数自动选歌：
+
+```bash
+pixi run visual-montage batch-run \
+  --manifest data/inputs/manifests/beauty.csv \
+  --category beauty \
+  --limit 20 \
+  --count 5 \
+  --campaign data/inputs/campaigns/beauty_20s.yaml \
+  --profile profiles/categories/beauty.yaml \
+  --voiceover-audio data/runs/beauty-first/voiceover/product-sequence.wav \
+  --asset-library data/assets/asset-library.yaml \
+  --registry data/catalog/candidate-registry.sqlite \
+  --run-id beauty-20-5-v1
+```
+
+需要人工指定音乐时，额外添加：
+
+```bash
+--music-analysis data/runs/beauty-first/music/music-analysis.json
+```
+
+每个验证通过的方案会生成独立剪映草稿、`jianying-plan.json`、
+`jianying-result.json`、`cover-clean.jpg`、`cover-preview.jpg` 和
+`cover.json`。草稿成功且无跳过素材时才提交候选使用记录；候选不足的方案标记
+为 `partial` 并释放预占，导出失败的方案也自动释放。
+
+测试缓存和整条剪映链路但禁止远程分析时，添加：
+
+```bash
+--cache-only
+```
+
+只重跑素材音频分析、保留视频画面缓存时使用：
+
+```bash
+--force-audio
+```
+
+Audio Separator 首次失败或超时后会在当前批次熔断，后续素材使用YAMNet音乐+
+对话双预设保守判断，不会让20条视频反复等待同一个远程故障。Separator恢复后，
+系统会继续使用人声Stem、伴奏Stem和ASR区分口播与歌词。
+
+## 口播生成与强制重生成
+
+默认优先使用文案、声线、语速和模型配置对应的TTS缓存。单独生成口播：
+
+```bash
+pixi run visual-montage generate-voiceover \
+  --campaign data/inputs/campaigns/beauty_20s.yaml \
+  --output data/runs/beauty-voice/voiceover/product-sequence.wav
+```
+
+忽略缓存并强制重新调用 OmniVoice；失败时自动回退 VoxCPM：
+
+```bash
+pixi run visual-montage generate-voiceover \
+  --campaign data/inputs/campaigns/beauty_20s.yaml \
+  --output data/runs/beauty-voice/voiceover/product-sequence.wav \
+  --force
+```
+
+`batch-run` 不传 `--voiceover-audio` 时会自动生成或复用缓存。要求本批强制
+重新生成时使用：
+
+```bash
+--voiceover-mode regenerate
+```
+
+生成结果写入同目录的 `voiceover-result.json`，包含实际provider、模型ID、时长、
+缓存命中状态和OmniVoice/VoxCPM尝试记录。
+
+## MOSS字幕时间戳与气口对齐
+
+TTS生成或载入口播后，系统调用：
+
+```text
+OpenMOSS-Team/MOSS-Transcribe-Diarize
+```
+
+环境变量：
+
+```env
+MOSS_ASR_API_BASE=https://api.ten-rings.adtensor.com/llm/v1
+MOSS_ASR_ENDPOINT=/audio/transcriptions
+MOSS_ASR_API_KEY=
+MOSS_ASR_MODEL=OpenMOSS-Team/MOSS-Transcribe-Diarize
+MOSS_ASR_RESPONSE_FORMAT=text
+```
+
+字幕对齐顺序：
+
+```text
+MOSS ASR获取句段时间戳和说话人
+→ Campaign原文修正产品名和转写文本
+→ 按句号、逗号和语义短句拆分
+→ FFmpeg检测真实静音和气口
+→ 为每个理想切点选择最近气口
+→ 无内部气口时按字符发音权重降级
+→ 第一条强制从TTS 0秒开始
+→ 最后一条强制在TTS实际时长结束
+```
+
+每次生成：
+
+```text
+voiceover-result.json  TTS模型、Provider、时长和缓存状态
+subtitles.json         MOSS原始结果、气口、标准化字幕和校验
+product-sequence.wav   一条连续口播音频
+```
+
+字幕强校验：
+
+```text
+字幕总时长误差 <= 50ms
+字幕之间不得重叠
+第一条字幕开始 = 0
+最后一条字幕结束 = WAV实际时长
+每条字幕在剪映中保持独立可编辑
+```
 
 ## 测试
 

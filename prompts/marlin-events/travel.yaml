@@ -1,0 +1,11 @@
+query_groups:
+  - id: destination
+    normal: "destination reveal, dramatic scenic view, or iconic landmark"
+    strict: "clear impressive travel destination filling the frame"
+    broad: "visually attractive travel scenery"
+  - id: immersive_motion
+    normal: "immersive walking, driving, train, boat, or aerial travel movement"
+  - id: local_experience
+    normal: "local market, street, food, culture, festival, or authentic activity"
+  - id: stay_and_reaction
+    normal: "hotel reveal, room view, resort moment, or delighted traveler reaction"

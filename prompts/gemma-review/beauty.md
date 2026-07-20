@@ -48,6 +48,7 @@ Return valid JSON only, using numeric seconds and this exact structure:
       "peak_time": 1.0,
       "event": "one allowed event id",
       "description": "visible evidence",
+      "chinese_subtitles_present": false,
       "aesthetic": 0.0,
       "payoff": 0.0,
       "action_intensity": 0.0,
@@ -64,6 +65,9 @@ Rules:
 - `start < end`; both timestamps must be inside 0-{{duration}} seconds.
 - Prefer complete actions lasting {{candidate_duration_min}}-{{candidate_duration_max}} seconds.
 - Use only an event id from the allowed-event catalog.
+- Set `chinese_subtitles_present` to true when burned-in Simplified or Traditional
+  Chinese dialogue captions/subtitles are visible during any part of the candidate.
+  Do not count signs, packaging text, watermarks, usernames, or app UI as subtitles.
 - Do not invent people, products, outcomes, dialogue, or timestamps.
 - Reject weak, obstructed, blurred, repetitive, or context-dependent moments.
 - Return JSON only, without Markdown fences or additional commentary.

@@ -16,9 +16,10 @@ def _select_for_slots(
     slots: list[Slot],
     candidates: list[VisualCandidate],
     history: dict[str, dict],
-    unavailable: set[str],
+    candidate_global_counts: dict[str, int],
     source_global_counts: dict[str, int],
     max_per_source: int,
+    candidate_max_global_uses: int,
     source_max_global_uses: int,
     previous_batch_penalty: float,
     historical_use_penalty: float,
@@ -26,13 +27,16 @@ def _select_for_slots(
 ) -> list[VisualCandidate]:
     chosen: list[VisualCandidate] = []
     local_counts: dict[str, int] = {}
+    local_candidates: set[str] = set()
     last_video = ""
     last_event = ""
     for index, slot in enumerate(slots):
         eligible = [
             candidate
             for candidate in candidates
-            if candidate.candidate_id not in unavailable
+            if candidate.candidate_id not in local_candidates
+            and candidate_global_counts.get(candidate.candidate_id, 0)
+            < candidate_max_global_uses
             and not history.get(candidate.candidate_id, {}).get("reserved")
             and local_counts.get(candidate.video_id, 0) < max_per_source
             and source_global_counts.get(candidate.video_id, 0) < source_max_global_uses
@@ -57,6 +61,7 @@ def _select_for_slots(
                 - exported * historical_use_penalty
             )
             return (
+                candidate_global_counts.get(candidate.candidate_id, 0),
                 candidate.video_id == last_video,
                 candidate.event == last_event,
                 -score,
@@ -65,7 +70,10 @@ def _select_for_slots(
         eligible.sort(key=adjusted)
         candidate = eligible[0]
         chosen.append(candidate)
-        unavailable.add(candidate.candidate_id)
+        local_candidates.add(candidate.candidate_id)
+        candidate_global_counts[candidate.candidate_id] = (
+            candidate_global_counts.get(candidate.candidate_id, 0) + 1
+        )
         local_counts[candidate.video_id] = local_counts.get(candidate.video_id, 0) + 1
         source_global_counts[candidate.video_id] = (
             source_global_counts.get(candidate.video_id, 0) + 1
@@ -176,7 +184,7 @@ def batch_compose(
         candidates = registry.register(parsed, category, increment_analysis=False)
         ranked = rank_candidates(candidates, profile.get("preferred_events") or {})
         history = registry.history(category)
-        unavailable: set[str] = set()
+        candidate_global_counts: dict[str, int] = {}
         source_global_counts: dict[str, int] = {}
         opening_sources: set[str] = set()
         assignments: dict[str, list[VisualCandidate]] = {}
@@ -189,9 +197,10 @@ def batch_compose(
                 slots,
                 ranked,
                 history,
-                unavailable,
+                candidate_global_counts,
                 source_global_counts,
                 int(diversity.get("source_max_per_video", 2)),
+                max(1, int(diversity.get("candidate_max_global_uses_per_batch", 1))),
                 int(diversity.get("source_max_global_uses", 3)),
                 float(diversity.get("previous_batch_penalty", 1.0)),
                 float(diversity.get("historical_use_penalty", 0.3)),
@@ -248,6 +257,10 @@ def batch_compose(
                 "category": category,
                 "registry_path": str(registry_path),
                 "reservation_state": "reserved",
+                "candidate_usage_counts": candidate_global_counts,
+                "maximum_candidate_use_count": max(
+                    candidate_global_counts.values(), default=0
+                ),
                 "plans": plans,
             }
         )

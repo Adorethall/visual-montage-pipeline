@@ -6,12 +6,14 @@ import sys
 from pathlib import Path
 
 from .batch import batch_compose
+from .batch_runner import run_batch
 from .candidate_registry import CandidateRegistry
 from .cover import validate_cover_title
 from .io import load_campaign, load_manifest, load_yaml
-from .models import ensure_local_materials
+from .models import VisualCandidate, ensure_local_materials
 from .packaging import fixed_package_items, validate_package
 from .pipeline import analyze_music, build_cover_metadata, compose_from_candidates
+from .voiceover import generate_voiceover
 
 
 def validate_config(root: Path) -> list[str]:
@@ -58,6 +60,50 @@ def main(argv: list[str] | None = None) -> int:
     finalize.add_argument("--registry", type=Path, default=Path("data/catalog/candidate-registry.sqlite"))
     finalize.add_argument("--run-id", required=True)
     finalize.add_argument("--state", choices=("committed", "released"), required=True)
+    register = sub.add_parser("candidate-register")
+    register.add_argument("--candidate-pool", type=Path, required=True)
+    register.add_argument("--category", required=True)
+    register.add_argument("--registry", type=Path, default=Path("data/catalog/candidate-registry.sqlite"))
+    batch_run = sub.add_parser("batch-run")
+    batch_run.add_argument("--manifest", type=Path, required=True)
+    batch_run.add_argument("--category", required=True)
+    batch_run.add_argument("--limit", type=int, required=True)
+    batch_run.add_argument("--count", type=int, required=True)
+    batch_run.add_argument("--campaign", type=Path, required=True)
+    batch_run.add_argument("--profile", type=Path)
+    batch_run.add_argument("--music-analysis", type=Path)
+    batch_run.add_argument("--voiceover-audio", type=Path)
+    batch_run.add_argument(
+        "--voiceover-mode",
+        choices=("cached", "regenerate"),
+        default="cached",
+    )
+    batch_run.add_argument("--asset-library", type=Path, default=Path("data/assets/asset-library.yaml"))
+    batch_run.add_argument("--registry", type=Path, default=Path("data/catalog/candidate-registry.sqlite"))
+    batch_run.add_argument("--run-id", required=True)
+    batch_run.add_argument("--env-file", type=Path, default=Path(".env"))
+    batch_run.add_argument(
+        "--drafts-root",
+        type=Path,
+        default=Path("/Users/linying/Movies/JianyingPro/User Data/Projects/com.lveditor.draft"),
+    )
+    batch_run.add_argument(
+        "--media-root",
+        type=Path,
+        default=Path("/Users/linying/Movies/JianyingPro/RednoteMedia"),
+    )
+    batch_run.add_argument("--force-analysis", action="store_true")
+    batch_run.add_argument("--force-audio", action="store_true")
+    batch_run.add_argument("--cache-only", action="store_true")
+    generate_voice = sub.add_parser("generate-voiceover")
+    generate_voice.add_argument("--campaign", type=Path, required=True)
+    generate_voice.add_argument("--output", type=Path, required=True)
+    generate_voice.add_argument(
+        "--cache-dir",
+        type=Path,
+        default=Path("data/cache/voiceover"),
+    )
+    generate_voice.add_argument("--force", action="store_true")
     cover = sub.add_parser("cover-metadata")
     cover.add_argument("--title", required=True)
     cover.add_argument("--frame", type=Path, required=True)
@@ -117,6 +163,66 @@ def main(argv: list[str] | None = None) -> int:
             "candidate_count": changed,
             "registry": str(args.registry),
         }, ensure_ascii=False, indent=2))
+        return 0
+    elif args.command == "candidate-register":
+        raw = json.loads(args.candidate_pool.read_text(encoding="utf-8"))
+        candidates = [
+            VisualCandidate.model_validate(item)
+            for item in raw.get("candidates", raw)
+        ]
+        with CandidateRegistry(args.registry) as registry:
+            registered = registry.register(candidates, args.category)
+            history = registry.history(args.category)
+        print(json.dumps({
+            "ok": True,
+            "category": args.category,
+            "input_candidate_count": len(candidates),
+            "registered_candidate_count": len(registered),
+            "category_registry_count": len(history),
+            "registry": str(args.registry),
+        }, ensure_ascii=False, indent=2))
+        return 0
+    elif args.command == "batch-run":
+        if args.count < 1 or args.limit < 1:
+            parser.error("--count and --limit must be at least 1")
+        if args.force_analysis and args.cache_only:
+            parser.error("--force-analysis and --cache-only cannot be used together")
+        profile_path = args.profile or Path("profiles/categories") / f"{args.category}.yaml"
+        result = run_batch(
+            project_root=root.resolve(),
+            manifest=args.manifest.resolve(),
+            category=args.category,
+            limit=args.limit,
+            count=args.count,
+            campaign_path=args.campaign.resolve(),
+            profile_path=profile_path.resolve(),
+            music_analysis_path=(
+                args.music_analysis.resolve() if args.music_analysis else None
+            ),
+            voiceover_audio=(
+                args.voiceover_audio.resolve() if args.voiceover_audio else None
+            ),
+            asset_library=args.asset_library.resolve(),
+            registry_path=args.registry.resolve(),
+            run_id=args.run_id,
+            env_file=args.env_file.resolve(),
+            drafts_root=args.drafts_root.resolve(),
+            media_root=args.media_root.resolve(),
+            force_analysis=args.force_analysis,
+            force_audio=args.force_audio,
+            cache_only=args.cache_only,
+            voiceover_mode=args.voiceover_mode,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result["ok"] else 2
+    elif args.command == "generate-voiceover":
+        result = generate_voiceover(
+            campaign_path=args.campaign.resolve(),
+            output=args.output.resolve(),
+            cache_dir=args.cache_dir.resolve(),
+            force=args.force,
+        )
+        print(json.dumps({"ok": True, **result}, ensure_ascii=False, indent=2))
         return 0
     else:
         result = build_cover_metadata(

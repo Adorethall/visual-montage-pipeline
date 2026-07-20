@@ -14,11 +14,25 @@ product_openpages:
     audio_policy: preserve
 
 product_recordings:
-  - asset_id: rednote_beauty_recording_zh
+  - asset_id: rednote_food_recording_en
+    type: product_recording
+    path: data/assets/product-recordings/food.mp4
+    category: food
+    language: en-US
+    aspect_ratio: "9:16"
+    width: 1180
+    height: 2098
+    fps: 30
+    duration_seconds: 22.233
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [search, result_browsing]
+    requires_safe_trim_review: true
+
+  - asset_id: rednote_beauty_recording_en
     type: product_recording
     path: data/assets/product-recordings/彩妆.mp4
     category: beauty
-    language: zh-CN
+    language: en-US
     aspect_ratio: "9:16"
     width: 720
     height: 1280
@@ -28,11 +42,11 @@ product_recordings:
     features: [result_browsing]
     requires_safe_trim_review: true
 
-  - asset_id: rednote_travel_recording_zh
+  - asset_id: rednote_travel_recording_en
     type: product_recording
     path: data/assets/product-recordings/出行攻略.mp4
     category: travel
-    language: zh-CN
+    language: en-US
     aspect_ratio: "9:16"
     width: 720
     height: 1280
@@ -42,11 +56,11 @@ product_recordings:
     features: [result_browsing]
     requires_safe_trim_review: true
 
-  - asset_id: rednote_home_recording_zh
+  - asset_id: rednote_home_recording_en
     type: product_recording
     path: data/assets/product-recordings/家居用品.mp4
     category: home
-    language: zh-CN
+    language: en-US
     aspect_ratio: "9:16"
     width: 720
     height: 1280
@@ -56,11 +70,11 @@ product_recordings:
     features: [result_browsing]
     requires_safe_trim_review: true
 
-  - asset_id: rednote_graduation_recording_zh
+  - asset_id: rednote_graduation_recording_en
     type: product_recording
     path: data/assets/product-recordings/毕业季.mp4
     category: graduation
-    language: zh-CN
+    language: en-US
     aspect_ratio: "9:16"
     width: 720
     height: 1280
@@ -139,9 +153,18 @@ fonts:
     usage: [cover_title, hook, cta]
 
 category_defaults:
+  food:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_food_recording_en
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: helvetica_now_display_black
+
   beauty:
     product_openpage_asset_id: rednote_openpage_zh_vertical
-    product_recording_asset_id: rednote_beauty_recording_zh
+    product_recording_asset_id: rednote_beauty_recording_en
     logo_asset_id: rednote_logo_white_vertical
     animated_logo_asset_id: rednote_logo_white_vertical_animated
     cover_logo_asset_id: rednote_logo_white_vertical
@@ -150,7 +173,7 @@ category_defaults:
 
   travel:
     product_openpage_asset_id: rednote_openpage_zh_vertical
-    product_recording_asset_id: rednote_travel_recording_zh
+    product_recording_asset_id: rednote_travel_recording_en
     logo_asset_id: rednote_logo_white_vertical
     animated_logo_asset_id: rednote_logo_white_vertical_animated
     cover_logo_asset_id: rednote_logo_white_vertical
@@ -159,7 +182,7 @@ category_defaults:
 
   home:
     product_openpage_asset_id: rednote_openpage_zh_vertical
-    product_recording_asset_id: rednote_home_recording_zh
+    product_recording_asset_id: rednote_home_recording_en
     logo_asset_id: rednote_logo_white_vertical
     animated_logo_asset_id: rednote_logo_white_vertical_animated
     cover_logo_asset_id: rednote_logo_white_vertical
@@ -168,14 +191,11 @@ category_defaults:
 
   graduation:
     product_openpage_asset_id: rednote_openpage_zh_vertical
-    product_recording_asset_id: rednote_graduation_recording_zh
+    product_recording_asset_id: rednote_graduation_recording_en
     logo_asset_id: rednote_logo_white_vertical
     animated_logo_asset_id: rednote_logo_white_vertical_animated
     cover_logo_asset_id: rednote_logo_white_vertical
     endcard_asset_id: rednote_endcard_vertical
     cover_font_asset_id: douyin_sans_bold_zh
 
-known_gaps:
-  - category: food
-    missing: product_recording
-    impact: Food ads cannot pass mandatory packaging validation until a food-specific or approved generic recording is added.
+known_gaps: []

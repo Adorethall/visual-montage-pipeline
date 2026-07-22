@@ -398,6 +398,77 @@ product-sequence.wav   一条连续口播音频
 每条字幕在剪映中保持独立可编辑
 ```
 
+## 本地只读质量监控
+
+项目内置一个只读 HTML 监控页，用于在视频分析和批量剪辑过程中尽早发现问题。
+服务直接读取 `data/runs` 下已经生成的 JSON、图片和运行目录，不会修改候选池、
+候选使用记录、Campaign、Profile、剪映草稿或素材文件。
+
+启动监控：
+
+```bash
+cd "/Users/linying/Adtiger/工具类/visual-montage-pipeline"
+
+pixi run visual-montage review-server \
+  --runs-root data/runs \
+  --host 127.0.0.1 \
+  --port 8765
+```
+
+浏览器访问：
+
+```text
+http://127.0.0.1:8765
+```
+
+启动时直接选中某个任务：
+
+```bash
+pixi run visual-montage review-server \
+  --runs-root data/runs \
+  --run-id overall-makeup-0720-v2
+```
+
+需要在局域网其他设备查看时，可以改为 `--host 0.0.0.0`。此时页面会暴露
+运行产物和预览图，只应在可信网络中使用；默认的 `127.0.0.1` 仅允许本机访问。
+
+页面左侧按照 Category 折叠任务，例如 `overall_makeup`、
+`cosmetics_recommendation`、`short_drama`。任务详情包含：
+
+- 输入视频数、有效候选数、分析失败数和成片状态；
+- 自动中文告警，包括候选池不足、单一来源占比过高、候选重复度过高、
+  未使用候选比例过低以及 Image2 回退；
+- 每条源视频的作者、视频时长、候选数量、候选占比、事件分布、分析路由和错误；
+- 高光候选 Contact Sheet；
+- 成片之间的候选与来源重合情况；
+- 每条成片的封面、封面文案、口播文案、产品开屏、录屏、尾贴、作者和剪映草稿名。
+
+封面预览优先读取：
+
+```text
+creatives/<creative-id>/cover/cover-image2.png
+```
+
+Image2 图片不存在时才回退到：
+
+```text
+creatives/<creative-id>/cover/cover-preview.jpg
+```
+
+监控页可以在 `batch-run` 执行期间同时开启。刷新浏览器即可读取当前磁盘上的最新
+状态；它不会触发重新分析、重新生成封面或重新导出剪映工程。所有 POST 请求都会
+返回 `405 Method Not Allowed`，因此当前版本不能在页面内审批、重跑或修改配置。
+
+常见问题：
+
+- 页面没有任务：确认 `--runs-root` 指向包含各个 Run ID 子目录的 `data/runs`。
+- 任务只有分析结果：这是正常状态；尚未生成 `result.json` 和 `creatives` 时，页面
+  只展示候选池、失败信息和 Contact Sheet。
+- 封面不显示：检查 `cover-image2.png` 或 `cover-preview.jpg` 是否实际存在于该
+  Run 目录内。
+- 端口被占用：更换端口，例如 `--port 8766`。
+- 停止服务：在启动监控的终端按 `Ctrl+C`。
+
 ## 测试
 
 ```bash

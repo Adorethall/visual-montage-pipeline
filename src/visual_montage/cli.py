@@ -13,6 +13,7 @@ from .io import load_campaign, load_manifest, load_yaml
 from .models import VisualCandidate, ensure_local_materials
 from .packaging import fixed_package_items, validate_package
 from .pipeline import analyze_music, build_cover_metadata, compose_from_candidates
+from .review_server import serve_monitor
 from .voiceover import generate_voiceover
 
 
@@ -100,6 +101,16 @@ def main(argv: list[str] | None = None) -> int:
     batch_run.add_argument("--force-analysis", action="store_true")
     batch_run.add_argument("--force-audio", action="store_true")
     batch_run.add_argument("--cache-only", action="store_true")
+    review_server = sub.add_parser(
+        "review-server",
+        help="Start the local read-only run monitoring dashboard",
+    )
+    review_server.add_argument(
+        "--runs-root", type=Path, default=Path("data/runs")
+    )
+    review_server.add_argument("--host", default="127.0.0.1")
+    review_server.add_argument("--port", type=int, default=8765)
+    review_server.add_argument("--run-id", default="")
     generate_voice = sub.add_parser("generate-voiceover")
     generate_voice.add_argument("--campaign", type=Path, required=True)
     generate_voice.add_argument("--output", type=Path, required=True)
@@ -221,6 +232,16 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result["ok"] else 2
+    elif args.command == "review-server":
+        if not 1 <= args.port <= 65535:
+            parser.error("--port must be between 1 and 65535")
+        serve_monitor(
+            runs_root=args.runs_root.resolve(),
+            host=args.host,
+            port=args.port,
+            run_id=args.run_id,
+        )
+        return 0
     elif args.command == "generate-voiceover":
         result = generate_voiceover(
             campaign_path=args.campaign.resolve(),

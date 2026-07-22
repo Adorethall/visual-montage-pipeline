@@ -38,7 +38,7 @@ gemma_review:
   minimum_candidates_per_video: 3
   candidate_topup_attempts: 2
   hard_filters:
-    reject_chinese_subtitles: true
+    reject_chinese_subtitles: false
   candidate_count: {minimum: 3, maximum: 8}
   candidate_duration: {minimum: 0.8, preferred: 1.8, maximum: 3.4}
   default_event: visual_spectacle

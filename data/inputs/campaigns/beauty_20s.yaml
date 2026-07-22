@@ -45,7 +45,7 @@ cover:
   editable_title: false
   font_asset_id: helvetica_now_display_black
   image2:
-    enabled: true
+    enabled: false
     task_key: gpt-image2
     size: 1080x1920
     quality: high

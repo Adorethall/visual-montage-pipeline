@@ -16,9 +16,10 @@ from visual_montage.voiceover import (
 from visual_montage.subtitles import (
     align_subtitles,
     parse_moss_response,
+    wrap_subtitle_text,
 )
 from visual_montage.marlin_routing import marlin_segment_windows, offset_marlin_result
-from visual_montage.montage import Slot, build_slots, validate_timeline
+from visual_montage.montage import Slot, build_slots, loop_beats, validate_timeline
 
 
 def candidate(index: int, video: str) -> VisualCandidate:
@@ -37,6 +38,19 @@ def candidate(index: int, video: str) -> VisualCandidate:
             subject_visibility=1.0,
         ),
     )
+
+
+def test_subtitle_text_wraps_without_splitting_english_words() -> None:
+    wrapped = wrap_subtitle_text(
+        "Find makeup looks you love and save your favorites", maximum_units=28
+    )
+    assert wrapped == "Find makeup looks you love\nand save your favorites"
+    assert all(len(line) <= 28 for line in wrapped.splitlines())
+
+
+def test_subtitle_text_wraps_cjk_by_visual_width() -> None:
+    wrapped = wrap_subtitle_text("找到喜欢的妆容随手收藏下来", maximum_units=14)
+    assert wrapped == "找到喜欢的妆容\n随手收藏下来"
 
 
 def test_package_accepts_two_english_voiceover_sentences() -> None:
@@ -82,6 +96,26 @@ def test_montage_slots_cover_fixed_package_boundaries() -> None:
     assert all(left.end == right.start for left, right in zip(second, second[1:]))
 
 
+def test_short_bgm_beats_loop_through_second_montage() -> None:
+    source_beats = [
+        0.069, 1.058, 2.0, 2.759, 3.541, 4.53,
+        5.242, 6.185, 7.128, 7.841, 8.783,
+    ]
+    beats = loop_beats(source_beats, source_duration=9.684, timeline_end=17.5)
+
+    assert 9.753 in beats
+    assert 10.742 in beats
+    assert 11.684 in beats
+    assert 17.5 not in beats
+
+    second = build_slots(12.8, 17.5, beats, target=1.3)
+    assert len(second) > 1
+    assert second[0].start == 12.8
+    assert second[-1].end == 17.5
+    assert max(slot.duration for slot in second) < 4.7
+    assert all(left.end == right.start for left, right in zip(second, second[1:]))
+
+
 def test_extreme_batch_mode_reuses_candidates_only_after_first_use() -> None:
     candidates = [candidate(1, "video_1"), candidate(2, "video_2")]
     slots = [Slot(0.0, 1.0), Slot(1.0, 2.0)]
@@ -102,6 +136,37 @@ def test_extreme_batch_mode_reuses_candidates_only_after_first_use() -> None:
         item.candidate_id for item in second
     }
     assert candidate_counts == {"raw_1": 2, "raw_2": 2}
+
+
+def test_source_videos_per_creative_uses_exact_distinct_source_count() -> None:
+    candidates = [
+        candidate(index * 10 + item, f"video_{index}")
+        for index in range(1, 6)
+        for item in range(1, 5)
+    ]
+    slots = [Slot(float(index), float(index + 1)) for index in range(8)]
+    chosen = _select_for_slots(
+        slots,
+        candidates,
+        {},
+        {},
+        {},
+        4,
+        3,
+        20,
+        0.0,
+        0.0,
+        set(),
+        3,
+    )
+    assert len(chosen) == len(slots)
+    assert len({item.video_id for item in chosen}) == 3
+    counts = {
+        video_id: sum(item.video_id == video_id for item in chosen)
+        for video_id in {item.video_id for item in chosen}
+    }
+    assert max(counts.values()) <= 4
+    assert min(counts.values()) >= 2
 
 
 def test_bgm_selection_rejects_assets_shorter_than_minimum(tmp_path: Path) -> None:

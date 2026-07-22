@@ -1,0 +1,141 @@
+schema_version: "1.0"
+category_id: overall_makeup
+display_name: 整体妆容
+parent_category: beauty
+aliases: [整体妆容, 完妆, 全脸妆效, full makeup look, finished makeup]
+
+preferred_events:
+  final_look_reveal: 1.0
+  before_after_transition: 1.0
+  full_face_showcase: 0.96
+  face_turn_showcase: 0.92
+  makeup_detail_closeup: 0.86
+  expressive_beauty_pose: 0.82
+penalized_events:
+  talking_head: 0.85
+  product_only: 0.72
+  slow_application: 0.62
+  incomplete_makeup: 0.70
+
+clip_duration: {minimum: 0.8, preferred: 1.5, maximum: 3.0}
+opening_events: [final_look_reveal, before_after_transition, full_face_showcase]
+cover_events: [final_look_reveal, full_face_showcase, face_turn_showcase]
+cover_title_strategies: [finished_look_collection, makeup_inspiration, look_choice]
+cover_selection:
+  gemma_enabled: true
+  max_candidates: 5
+  samples_per_candidate: 3
+
+gemma_review:
+  prompt_path: prompts/gemma-review/overall_makeup.md
+  api_max_attempts: 3
+  api_max_concurrency: 5
+  api_retry_delays_seconds: [2.0, 5.0]
+  minimum_candidates_per_video: 3
+  candidate_topup_attempts: 2
+  hard_filters:
+    reject_chinese_subtitles: true
+  candidate_count: {minimum: 3, maximum: 8}
+  candidate_duration: {minimum: 1.0, preferred: 2.0, maximum: 3.5}
+  default_event: final_look_reveal
+  events:
+    final_look_reveal:
+      label: 完妆亮相
+      keywords: [完整妆容, 成妆亮相, 完妆揭晓, finished look reveal, makeup reveal]
+    full_face_showcase:
+      label: 完整正脸妆效展示
+      keywords: [正脸, 全脸妆效, 五官完整, full face, complete makeup look]
+    face_turn_showcase:
+      label: 转脸或侧脸妆效展示
+      keywords: [转脸, 侧脸, 回眸, face turn, side profile]
+    before_after_transition:
+      label: 妆前妆后变化
+      keywords: [妆前妆后, 变妆, 遮镜转场, before after, transformation]
+    makeup_detail_closeup:
+      label: 完妆局部细节
+      keywords: [眼妆细节, 唇妆细节, 底妆质感, makeup detail, complexion detail]
+    expressive_beauty_pose:
+      label: 有张力的妆容姿态
+      keywords: [摆姿, 甩发, 自信表情, beauty pose, hair movement]
+  positive_visual_keywords:
+    - complete full-face makeup result
+    - both eyes and major facial features visible
+    - clear finished-look payoff
+    - flattering face lighting
+    - confident pose or face turn
+    - visually self-contained reveal
+    - sharp makeup details
+  negative_visual_keywords:
+    - talking head explanation
+    - product-only shot
+    - long makeup application
+    - unfinished makeup
+    - face heavily obstructed
+    - face too small in frame
+    - subtitles covering the face
+    - blurred or closed-eye frame
+    - incomplete transition
+
+marlin_recall:
+  enabled: true
+  minimum_video_duration_seconds: 30.0
+  maximum_video_duration_seconds: 120.0
+  segment_duration_seconds: 115.0
+  segment_overlap_seconds: 5.0
+  query_path: prompts/marlin-events/overall_makeup.yaml
+  query_variant: normal
+  max_query_groups: 4
+  gemma_review_context_seconds: 1.5
+  gemma_review_max_window_seconds: 12.0
+  gemma_review_max_windows: 12
+  gemma_review_max_recall_span_seconds: 30.0
+  fail_open: true
+  upload_prefix: visual-montage/marlin-inputs
+  presigned_url_expires_seconds: 86400
+
+contact_sheet:
+  enabled: true
+  columns: 4
+  thumbnail_width: 320
+  thumbnail_height: 480
+  label_height: 86
+  jpeg_quality: 88
+  background_color: "#151515"
+  label_color: "#F5F5F5"
+  secondary_label_color: "#B8B8B8"
+
+audio_bgm_analysis:
+  enabled: true
+  minimum_bgm_duration_seconds: 5.0
+  remote_enrichment: true
+  fail_open: true
+  target_window_seconds: 20
+  allowed_audio_types: [instrumental, song_with_lyrics, rap_song, music_with_spoken_overlay]
+  minimum_music_score: 0.68
+  maximum_speech_risk: 0.18
+  minimum_separation_quality: 0.75
+  preferred_bpm: {minimum: 100, target: 118, maximum: 132}
+  same_bgm_max_per_batch: 2
+
+batch_generation:
+  cover_titles:
+    - Finished Makeup Looks To Save
+    - Your Next Makeup Look
+    - Makeup Inspo Worth Saving
+    - Find Your Favorite Look
+    - Full Glam Inspiration
+  history:
+    enabled: true
+    registry_path: data/catalog/candidate-registry.sqlite
+  author_grouping:
+    enabled: true
+    avoid_cross_section_reuse: true
+  diversity:
+    candidate_max_global_uses_per_batch: 4
+    source_videos_per_creative: 5
+    source_max_per_video: 4
+    source_max_global_uses: 12
+    previous_batch_penalty: 0.6
+    historical_use_penalty: 0.15
+    maximum_pairwise_candidate_overlap_ratio: 0.2
+    minimum_never_used_candidate_ratio: 0.8

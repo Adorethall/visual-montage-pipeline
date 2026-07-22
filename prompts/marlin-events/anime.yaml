@@ -1,0 +1,13 @@
+query_groups:
+  - id: transformation
+    normal: "anime transformation, power-up, awakening, energy charge, or new form reveal"
+    strict: "animated character visibly transforming or releasing power"
+    broad: "high-impact animated transformation or energy sequence"
+  - id: action_impact
+    normal: "animated attack impact, dash, jump, collision, or decisive action beat"
+  - id: visual_spectacle
+    normal: "striking anime visual effects, magic, energy field, explosion, or epic environment reveal"
+  - id: character_entrance
+    normal: "dramatic animated character entrance, hero arrival, villain reveal, or pose"
+  - id: emotional_or_comedic
+    normal: "strong animated emotional close-up, exaggerated reaction, or clear visual comedy payoff"

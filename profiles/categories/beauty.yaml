@@ -136,6 +136,9 @@ batch_generation:
   history:
     enabled: true
     registry_path: data/catalog/candidate-registry.sqlite
+  author_grouping:
+    enabled: true
+    avoid_cross_section_reuse: true
   diversity:
     candidate_max_global_uses_per_batch: 4
     source_max_per_video: 2

@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,8 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from .batch import batch_compose
 from .candidate_registry import CandidateRegistry
+from .cover_image2 import generate_image2_cover
+from .cover_selector import select_cover_frame
 from .io import load_yaml, write_json
 from .voiceover import generate_voiceover
 from .audio_levels import adaptive_mix_levels
@@ -29,6 +32,58 @@ def _author_from_video_path(video_path: str) -> str:
     tail = re.sub(r"_[0-9a-fA-F]{24}$", "", stem[marker:])
     parts = tail.rsplit("_", 2)
     return parts[0].strip() if parts else ""
+
+
+def _draft_language_label(language: str) -> str:
+    normalized = str(language or "").strip().lower().replace("_", "-")
+    if normalized.startswith("en"):
+        return "英语"
+    if normalized in {"zh-tw", "zh-hk", "zh-hant"}:
+        return "中文（繁体）"
+    if normalized.startswith("zh"):
+        return "中文（简体）"
+    return str(language or "未知语言").strip()
+
+
+def _safe_draft_component(value: str, fallback: str) -> str:
+    cleaned = re.sub(r"[/:\\\x00]", "_", str(value or "").strip())
+    return cleaned or fallback
+
+
+def _jianying_draft_name(plan: dict, batch_index: int) -> str:
+    selected = plan.get("selected_candidates") or []
+    first = selected[0] if selected else {}
+    video_path = Path(str(first.get("video_path") or ""))
+    stem = video_path.stem
+    category_prefix = re.split(r"(?:_@|\*@)", stem, maxsplit=1)[0]
+    category_parts = category_prefix.split("-", 1)
+    fallback_category = str((plan.get("campaign") or {}).get("category") or "unknown")
+    level_two = category_parts[0] if category_parts and category_parts[0] else fallback_category
+    level_three = category_parts[1] if len(category_parts) > 1 else fallback_category
+
+    note_match = re.search(r"_([0-9a-fA-F]{24})$", stem)
+    if note_match:
+        note_id = note_match.group(1)
+    else:
+        video_id = str(first.get("video_id") or "")
+        id_match = re.search(r"([0-9a-fA-F]{24})$", video_id)
+        note_id = id_match.group(1) if id_match else video_id or "unknown"
+
+    language = _draft_language_label(
+        str((plan.get("campaign") or {}).get("language") or "")
+    )
+    run_id = str(plan.get("run_id") or "")
+    version_match = re.search(r"(?:^|-)v(\d+)$", run_id, re.IGNORECASE)
+    version = f"v{version_match.group(1)}" if version_match else "v1"
+    components = (
+        _safe_draft_component(level_two, "unknown"),
+        _safe_draft_component(level_three, "unknown"),
+        _safe_draft_component(note_id, "unknown"),
+        _safe_draft_component(language, "未知语言"),
+        version,
+        f"{batch_index:03d}",
+    )
+    return "-".join(components)
 
 
 def _logo_aligned_transform_y(logo_path: Path, fallback: float = 0.82) -> float:
@@ -75,9 +130,17 @@ def _asset_path(
     return path.resolve()
 
 
-def _extract_cover(candidate: dict, output: Path) -> None:
+def _extract_cover(
+    candidate: dict,
+    output: Path,
+    timestamp: float | None = None,
+) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    timestamp = float(candidate.get("peak_time") or candidate["preferred_trim"]["start"])
+    timestamp = float(
+        timestamp
+        if timestamp is not None
+        else candidate.get("peak_time") or candidate["preferred_trim"]["start"]
+    )
     subprocess.run(
         [
             "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
@@ -100,6 +163,13 @@ def _cover_title(profile: dict, index: int, fallback: str) -> str:
     if titles:
         return str(titles[(index - 1) % len(titles)])
     return fallback
+
+
+def _select_cover_candidate(selected: list[dict], profile: dict) -> dict:
+    """Use the first timeline highlight so batch opener diversity carries into covers."""
+    if not selected:
+        raise ValueError("no candidates available for cover selection")
+    return selected[0]
 
 
 def _cover_title_style(cover_raw: dict) -> dict:
@@ -205,6 +275,16 @@ def _cover_preview(
     canvas.convert("RGB").save(output, "JPEG", quality=90, optimize=True)
 
 
+def _cover_logo_preview(source: Path, output: Path, logo_path: Path) -> None:
+    """Create a review image while keeping the draft logo as a separate overlay."""
+    with Image.open(source) as image:
+        canvas = image.convert("RGBA")
+    with Image.open(logo_path) as logo:
+        canvas.alpha_composite(logo.convert("RGBA").resize(canvas.size))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(output, "PNG")
+
+
 def build_jianying_plan(
     *,
     compose_plan: dict,
@@ -216,6 +296,8 @@ def build_jianying_plan(
     creative_index: int,
     creative_dir: Path,
     project_root: Path,
+    prewarmed_image2: dict[str, Any] | None = None,
+    preselected_cover: dict[str, Any] | None = None,
 ) -> tuple[dict, dict]:
     library = load_yaml(asset_library)
     assets_by_id = _asset_index(library)
@@ -272,8 +354,14 @@ def build_jianying_plan(
     selected = compose_plan.get("selected_candidates") or []
     if not selected:
         raise ValueError("compose plan has no selected candidates")
+    cover_selection = preselected_cover or {
+        "candidate": _select_cover_candidate(selected, profile),
+        "timestamp": None,
+        "mode": "first_highlight_fallback",
+    }
+    cover_candidate = cover_selection["candidate"]
     cover_clean = creative_dir / "cover" / "cover-clean.jpg"
-    _extract_cover(selected[0], cover_clean)
+    _extract_cover(cover_candidate, cover_clean, cover_selection.get("timestamp"))
     cover_title = _cover_title(
         profile,
         creative_index,
@@ -295,14 +383,62 @@ def build_jianying_plan(
         project_root,
     )
     cover_preview = creative_dir / "cover" / "cover-preview.jpg"
-    _cover_preview(
-        cover_clean,
-        cover_preview,
-        cover_title,
-        font_path,
-        cover_logo_path,
-        cover_title_style,
-    )
+    cover_frame = cover_clean
+    cover_editable = True
+    image2_metadata: dict[str, Any] = {
+        "enabled": False,
+        "provider": "local_editable_title",
+    }
+    image2_config = cover_raw.get("image2") or {}
+    if bool(image2_config.get("enabled", False)):
+        image2_raw = creative_dir / "cover" / "cover-image2-raw.png"
+        image2_preview = creative_dir / "cover" / "cover-image2.png"
+        try:
+            if prewarmed_image2 is not None:
+                if not bool(prewarmed_image2.get("ok")):
+                    raise RuntimeError(
+                        str(prewarmed_image2.get("error") or "Image2 pre-generation failed")
+                    )
+                image2_result = prewarmed_image2
+            else:
+                image2_result = generate_image2_cover(
+                    source_image=cover_clean,
+                    output_image=image2_raw,
+                    title=cover_title,
+                    category=str(campaign.get("category") or "general"),
+                    language=str(campaign.get("language") or "English"),
+                    config=image2_config,
+                    cache_dir=project_root / "data" / "cache" / "cover-image2",
+                    reserve_logo_safe_zone=True,
+                )
+            _cover_logo_preview(image2_raw, image2_preview, cover_logo_path)
+            cover_frame = image2_raw
+            cover_preview = image2_preview
+            cover_editable = False
+            image2_metadata = {
+                "enabled": True,
+                **image2_result,
+                "raw_frame": str(image2_raw),
+                "logo_preview": str(image2_preview),
+            }
+        except Exception as exc:
+            image2_metadata = {
+                "enabled": True,
+                "ok": False,
+                "provider": "local_editable_title",
+                "error": str(exc),
+            }
+            if not bool(image2_config.get("fail_open", True)):
+                raise
+    if cover_editable:
+        _cover_preview(
+            cover_clean,
+            cover_preview,
+            cover_title,
+            font_path,
+            cover_logo_path,
+            cover_title_style,
+        )
     voice_text = str((campaign_raw.get("voiceover") or {}).get("text") or "")
     audio_duration = _probe_duration(voiceover_audio)
     subtitles_path = voiceover_audio.with_name("subtitles.json")
@@ -400,10 +536,12 @@ def build_jianying_plan(
                 "enabled": True,
                 "title": cover_title,
                 "duration_seconds": 0.1,
-                "frame_path": str(cover_clean),
+                "frame_path": str(cover_frame),
                 "font_path": str(font_path) if font_path else "",
                 "language": campaign.get("language", "zh-CN"),
                 "title_style": cover_title_style,
+                "editable_title": cover_editable,
+                "native_text_enabled": cover_editable,
             },
             "author_id_overlay": {
                 "enabled": True,
@@ -437,11 +575,20 @@ def build_jianying_plan(
     }
     cover_metadata = {
         "title": cover_title,
-        "editable": True,
+        "editable": cover_editable,
         "clean_frame": str(cover_clean),
         "preview_frame": str(cover_preview),
-        "source_video_id": selected[0]["video_id"],
-        "source_timestamp": selected[0].get("peak_time"),
+        "image2": image2_metadata,
+        "source_video_id": cover_candidate["video_id"],
+        "source_timestamp": cover_selection.get("timestamp")
+        if cover_selection.get("timestamp") is not None
+        else cover_candidate.get("peak_time"),
+        "source_event": cover_candidate.get("event"),
+        "selection": {
+            key: value
+            for key, value in cover_selection.items()
+            if key != "candidate"
+        },
     }
     return plan, cover_metadata
 
@@ -476,6 +623,7 @@ def run_batch(
     env_file: Path,
     drafts_root: Path,
     media_root: Path,
+    draft_batch_folder: str = "",
     force_analysis: bool = False,
     force_audio: bool = False,
     cache_only: bool = False,
@@ -576,6 +724,99 @@ def run_batch(
         count=count,
     )
     campaign_raw = load_yaml(campaign_path)
+    image2_config = (campaign_raw.get("cover") or {}).get("image2") or {}
+    prewarmed_image2: dict[str, dict[str, Any]] = {}
+    cover_selections: dict[str, dict[str, Any]] = {}
+    used_cover_hashes: list[str] = []
+    valid_plans = [item for item in report["plans"] if item["validation"]["passed"]]
+    for item in valid_plans:
+        creative_id = str(item["creative_id"])
+        compose_plan = json.loads(
+            Path(item["plan_path"]).read_text(encoding="utf-8")
+        )
+        selection = select_cover_frame(
+            selected=compose_plan.get("selected_candidates") or [],
+            profile=profile,
+            output_dir=run_dir / "creatives" / creative_id / "cover",
+            timeout=float(
+                (profile.get("cover_selection") or {}).get("timeout_seconds", 120)
+            ),
+            excluded_hashes=used_cover_hashes,
+        )
+        cover_selections[creative_id] = selection
+        if selection.get("frame_hash"):
+            used_cover_hashes.append(str(selection["frame_hash"]))
+        write_json(
+            run_dir / "creatives" / creative_id / "cover" / "cover-selection.json",
+            {key: value for key, value in selection.items() if key != "candidate"},
+        )
+        print(
+            f"Cover frame selected: {creative_id} "
+            f"{selection.get('timestamp')}s ({selection.get('mode')})",
+            flush=True,
+        )
+    if bool(image2_config.get("enabled", False)):
+        max_workers = max(
+            1,
+            min(
+                int(image2_config.get("max_concurrency", 2)),
+                int(image2_config.get("provider_max_concurrency", 2)),
+                len(valid_plans) or 1,
+            ),
+        )
+
+        def prewarm_cover(item: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+            creative_id = str(item["creative_id"])
+            creative_index = int(item.get("creative_index") or 0)
+            if creative_index < 1:
+                creative_index = report["plans"].index(item) + 1
+            compose_plan = json.loads(
+                Path(item["plan_path"]).read_text(encoding="utf-8")
+            )
+            selection = cover_selections[creative_id]
+            candidate = selection["candidate"]
+            creative_dir = run_dir / "creatives" / creative_id
+            cover_clean = creative_dir / "cover" / "cover-clean.jpg"
+            _extract_cover(candidate, cover_clean, selection.get("timestamp"))
+            title = _cover_title(
+                profile,
+                creative_index,
+                str((campaign_raw.get("copy") or {}).get("hook") or "Highlight"),
+            )
+            output = creative_dir / "cover" / "cover-image2-raw.png"
+            result = generate_image2_cover(
+                source_image=cover_clean,
+                output_image=output,
+                title=title,
+                category=str((compose_plan.get("campaign") or {}).get("category") or category),
+                language=str((compose_plan.get("campaign") or {}).get("language") or "English"),
+                config=image2_config,
+                cache_dir=project_root / "data" / "cache" / "cover-image2",
+                reserve_logo_safe_zone=True,
+            )
+            return creative_id, result
+
+        print(
+            f"Generating {len(valid_plans)} Image2 cover(s) with concurrency {max_workers}",
+            flush=True,
+        )
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(prewarm_cover, item): item for item in valid_plans}
+            for future in as_completed(futures):
+                item = futures[future]
+                creative_id = str(item["creative_id"])
+                try:
+                    _, result = future.result()
+                    prewarmed_image2[creative_id] = result
+                    print(f"Image2 cover ready: {creative_id}", flush=True)
+                except Exception as exc:
+                    prewarmed_image2[creative_id] = {
+                        "ok": False,
+                        "error": str(exc),
+                    }
+                    print(f"Image2 cover failed: {creative_id}: {exc}", flush=True)
+                    if not bool(image2_config.get("fail_open", True)):
+                        raise
     results = []
     any_failure = False
     with CandidateRegistry(registry_path) as registry:
@@ -606,12 +847,14 @@ def run_batch(
                     creative_index=creative_index,
                     creative_dir=creative_dir,
                     project_root=project_root,
+                    prewarmed_image2=prewarmed_image2.get(creative_id),
+                    preselected_cover=cover_selections.get(creative_id),
                 )
                 plan_path = creative_dir / "jianying-plan.json"
                 write_json(plan_path, plan)
                 write_json(creative_dir / "cover" / "cover.json", cover)
                 result_path = creative_dir / "jianying-result.json"
-                draft_name = f"{run_id}-{creative_index:03d}"
+                draft_name = _jianying_draft_name(compose_plan, creative_index)
                 subprocess.run(
                     [
                         sys.executable,

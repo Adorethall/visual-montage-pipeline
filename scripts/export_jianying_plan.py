@@ -670,6 +670,40 @@ def export_plan(
         if cover.get("enabled")
         else 0.0
     )
+    cover_frame_value = str(cover.get("frame_path") or "")
+    cover_frame_path = (
+        _resolve_path(cover_frame_value, base_dir) if cover_frame_value else None
+    )
+    if cover_duration > 0 and cover_frame_path and cover_frame_path.is_file():
+        bundled_cover_frame = _bundle_media(cover_frame_path, media_dir)
+        cover_frame_segment = project.add_media_safe(
+            str(bundled_cover_frame),
+            start_time="0s",
+            duration=_microseconds(cover_duration),
+            track_name="CoverFrameOverlay",
+        )
+        if cover_frame_segment is not None:
+            _fill_canvas(cover_frame_segment, canvas_width, canvas_height)
+            cover_frame_segment.volume = 0.0
+            added.append({
+                "clip_id": "cover_frame_overlay",
+                "type": "cover_frame_overlay",
+                "path": str(bundled_cover_frame),
+                "target_start": 0.0,
+                "duration": cover_duration,
+            })
+        else:
+            skipped.append({
+                "clip_id": "cover_frame_overlay",
+                "reason": "add_media_safe_failed",
+                "path": str(cover_frame_path),
+            })
+    elif cover_duration > 0:
+        skipped.append({
+            "clip_id": "cover_frame_overlay",
+            "reason": "missing_cover_frame",
+            "path": str(cover_frame_path or ""),
+        })
     intro_enabled = bool(intro_logo.get("enabled"))
     cover_logo_enabled = bool(cover_logo.get("enabled"))
     if logo.get("enabled"):
@@ -1017,7 +1051,7 @@ def export_plan(
                 angle=float(shadow_style.get("angle", -90.0)),
             ),
             clip_settings=draft.ClipSettings(
-                transform_y=float(title_style.get("transform_y", -0.50))
+                transform_y=float(title_style.get("transform_y", -0.72))
             ),
         )
 

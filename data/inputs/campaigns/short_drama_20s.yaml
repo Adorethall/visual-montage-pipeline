@@ -1,5 +1,5 @@
-campaign_id: rednote_food_en_20s
-category: food
+campaign_id: rednote_short_drama_en_20s
+category: short_drama
 language: en-US
 market: Global
 duration_seconds: 20
@@ -9,7 +9,7 @@ package_mode: standard_ad
 product_demo:
   required: true
   openpage_asset_id: rednote_openpage_zh_vertical
-  recording_asset_id: rednote_food_recording_en
+  recording_asset_id: rednote_short_drama_recording_en
 
 brand:
   logo_asset_id: rednote_logo_white_vertical
@@ -20,24 +20,20 @@ brand:
   logo_end_guard_seconds: 0.0
 
 copy:
-  hook: What are you craving today?
-  brand_message: Discover endless food inspiration
+  hook: Ready for your next plot twist?
+  brand_message: Discover short dramas full of twists and emotion
   cta: Download now
   mandatory_copy: []
-  prohibited_claims:
-    - best food ever
-    - #1 recipe
-    - guaranteed results
-    - lose weight fast
+  prohibited_claims: [the best drama ever, guaranteed to be addictive]
 
 voiceover:
   required: true
   provider: omnivoice
   fallback_provider: voxcpm
   language: en-US
-  voice: "female, young adult, natural, energetic, warm, clear"
+  voice: "female, young adult, american accent, natural, energetic, intriguing, clear"
   speed: 1.0
-  text: Openrednote for delicious food inspiration. Find ideas you love and save your favorites.
+  text: Open rednote for addictive short dramas. Find stories you love and save your favorites.
   start_section: product_openpage
   start_offset_seconds: 0.15
   maximum_duration_seconds: 8.0
@@ -46,7 +42,7 @@ voiceover:
 cover:
   required: true
   editable_title: false
-  font_asset_id: douyin_sans_bold_zh
+  font_asset_id: helvetica_now_display_black
   image2:
     enabled: true
     task_key: gpt-image2
@@ -56,7 +52,7 @@ cover:
     provider_max_concurrency: 2
     request_timeout_seconds: 180
     fail_open: true
-    style_direction: Appetizing food editorial cover with energetic typography, warm accents, and an uncluttered premium layout.
+    style_direction: Cinematic short-drama poster with strong emotional tension, bold typography, and no invented story elements.
   title_style:
     font_size: 14.0
     color: "#FFFFFF"

@@ -23,6 +23,35 @@ TIMESTAMPED_SEGMENT = re.compile(
 SUBTITLE_ALIGNMENT_VERSION = "2"
 
 
+def _display_units(text: str) -> int:
+    return sum(
+        2 if ("\u4e00" <= char <= "\u9fff" or ord(char) > 0xFFFF) else 1
+        for char in text
+    )
+
+
+def wrap_subtitle_text(text: str, maximum_units: int = 28) -> str:
+    """Wrap subtitle text without splitting English words or CJK characters."""
+    normalized = " ".join(str(text).strip().split())
+    if not normalized or maximum_units <= 0:
+        return normalized
+    has_word_spaces = " " in normalized
+    tokens = normalized.split() if has_word_spaces else list(normalized)
+    separator = " " if has_word_spaces else ""
+    lines: list[str] = []
+    current = ""
+    for token in tokens:
+        candidate = token if not current else f"{current}{separator}{token}"
+        if current and _display_units(candidate) > maximum_units:
+            lines.append(current)
+            current = token
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return "\n".join(lines)
+
+
 def _duration(path: Path) -> float:
     result = subprocess.run(
         [

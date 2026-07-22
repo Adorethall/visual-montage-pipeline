@@ -1,0 +1,6 @@
+# 文件名第二级品类 -> 流水线稳定 category_id。
+# 每周出现新二级品类时，在这里新增一行；对应 profile 准备好后即可运行。
+整体妆容: overall_makeup
+化妆品推荐: cosmetics_recommendation
+短剧: short_drama
+二次元: anime

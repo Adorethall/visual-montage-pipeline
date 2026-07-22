@@ -1,0 +1,146 @@
+schema_version: "1.0"
+category_id: anime
+display_name: 二次元
+parent_category: drama
+aliases: [二次元, 动画, 动漫, anime, animation]
+
+preferred_events:
+  transformation_or_powerup: 1.0
+  action_impact: 0.98
+  visual_spectacle: 0.96
+  character_entrance: 0.92
+  emotional_character_closeup: 0.86
+  reveal_or_twist: 0.84
+  comedic_payoff: 0.78
+penalized_events:
+  static_dialogue: 0.76
+  slideshow_or_still: 0.72
+  credits_or_title_card: 0.88
+  graphic_or_unsafe_action: 1.0
+
+clip_duration: {minimum: 0.7, preferred: 1.3, maximum: 2.8}
+opening_events: [transformation_or_powerup, action_impact, visual_spectacle, character_entrance]
+cover_events: [visual_spectacle, character_entrance, emotional_character_closeup]
+cover_title_strategies: [visual_spectacle, character_moment, anime_energy]
+
+cover_selection:
+  gemma_enabled: true
+  max_candidates: 5
+  samples_per_candidate: 4
+  dedupe_hash_distance: 10
+  timeout_seconds: 120
+
+gemma_review:
+  prompt_path: prompts/gemma-review/anime.md
+  api_max_attempts: 3
+  api_max_concurrency: 5
+  api_retry_delays_seconds: [2.0, 5.0]
+  minimum_candidates_per_video: 3
+  candidate_topup_attempts: 2
+  hard_filters:
+    reject_chinese_subtitles: true
+  candidate_count: {minimum: 3, maximum: 8}
+  candidate_duration: {minimum: 0.8, preferred: 1.8, maximum: 3.4}
+  default_event: visual_spectacle
+  events:
+    character_entrance:
+      label: 角色亮相
+      keywords: [角色登场, 英雄入场, 反派亮相, character entrance, hero entrance]
+    transformation_or_powerup:
+      label: 变身或力量爆发
+      keywords: [变身, 能量聚集, 觉醒, 升级, transformation, power-up]
+    action_impact:
+      label: 动作冲击点
+      keywords: [攻击命中, 冲刺, 跳跃, 爆发动作, action impact, attack hit]
+    visual_spectacle:
+      label: 视觉奇观
+      keywords: [特效爆发, 魔法, 能量场, 宏大场景, visual spectacle, effects burst]
+    emotional_character_closeup:
+      label: 角色强情绪特写
+      keywords: [坚定眼神, 震惊, 愤怒, 落泪, emotional close-up, intense expression]
+    reveal_or_twist:
+      label: 揭示或剧情反转
+      keywords: [身份揭示, 隐藏力量, 意外真相, reveal, twist]
+    comedic_payoff:
+      label: 喜剧反应或笑点
+      keywords: [夸张反应, 反差笑点, 搞笑结果, comedic reaction, visual gag]
+  positive_visual_keywords:
+    - clear animated character action
+    - complete transformation or power-up beat
+    - visible impact frame with readable motion
+    - striking effects, lighting, or environment
+    - expressive character close-up
+    - strong character entrance or reveal
+    - visually self-contained moment
+  negative_visual_keywords:
+    - static dialogue scene
+    - still-image slideshow
+    - credits or title card
+    - editing UI or screen recording controls
+    - Chinese dialogue subtitles
+    - subtitles covering the main action
+    - repeated loop or duplicate animation
+    - motion-blurred transition frame
+    - incomplete action
+    - explicit gore or graphic injury
+
+marlin_recall:
+  enabled: true
+  minimum_video_duration_seconds: 30.0
+  maximum_video_duration_seconds: 120.0
+  segment_duration_seconds: 115.0
+  segment_overlap_seconds: 5.0
+  query_path: prompts/marlin-events/anime.yaml
+  query_variant: normal
+  max_query_groups: 5
+  gemma_review_context_seconds: 1.5
+  gemma_review_max_window_seconds: 12.0
+  gemma_review_max_windows: 12
+  gemma_review_max_recall_span_seconds: 30.0
+  fail_open: true
+  upload_prefix: visual-montage/marlin-inputs
+  presigned_url_expires_seconds: 86400
+
+contact_sheet:
+  enabled: true
+  columns: 4
+  thumbnail_width: 320
+  thumbnail_height: 480
+  label_height: 86
+  jpeg_quality: 88
+  background_color: "#151515"
+  label_color: "#F5F5F5"
+  secondary_label_color: "#B8B8B8"
+
+audio_bgm_analysis:
+  enabled: true
+  minimum_bgm_duration_seconds: 5.0
+  remote_enrichment: true
+  fail_open: true
+  target_window_seconds: 20
+  allowed_audio_types: [instrumental, song_with_lyrics, rap_song, music_with_spoken_overlay]
+  minimum_music_score: 0.68
+  maximum_speech_risk: 0.18
+  minimum_separation_quality: 0.75
+  preferred_bpm: {minimum: 112, target: 132, maximum: 150}
+  same_bgm_max_per_batch: 2
+
+batch_generation:
+  cover_titles:
+    - Anime Moments That Go Hard
+    - Pure Anime Energy
+    - Scenes Worth Replaying
+    - The Most Epic Moments
+    - Main Character Energy
+  history:
+    enabled: true
+    registry_path: data/catalog/candidate-registry.sqlite
+  diversity:
+    candidate_max_global_uses_per_batch: 4
+    source_videos_per_creative: 3
+    source_max_per_video: 4
+    source_max_global_uses: 12
+    previous_batch_penalty: 0.6
+    historical_use_penalty: 0.15
+    maximum_pairwise_candidate_overlap_ratio: 0.2
+    minimum_never_used_candidate_ratio: 0.8

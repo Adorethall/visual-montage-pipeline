@@ -1,0 +1,11 @@
+query_groups:
+  - id: finished_look
+    normal: "finished full-face makeup reveal, complete makeup look clearly visible"
+    strict: "person clearly presenting a completed full-face makeup result"
+    broad: "attractive completed makeup look or beauty reveal"
+  - id: face_showcase
+    normal: "front face or side profile showcasing the completed makeup"
+  - id: pose_motion
+    normal: "face turn, confident beauty pose, or hair movement showing the makeup"
+  - id: transformation
+    normal: "before and after makeup transformation, cover transition, or final reveal"

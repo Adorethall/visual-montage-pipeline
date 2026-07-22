@@ -8,7 +8,7 @@ from pathlib import Path
 from .cover import split_title, validate_cover_title
 from .io import load_campaign, load_yaml, write_json
 from .models import VisualCandidate
-from .montage import assign_candidates, build_slots, validate_timeline
+from .montage import assign_candidates, build_slots, loop_beats, validate_timeline
 from .music_features import analyze_audio
 from .packaging import fixed_package_items, validate_package
 from .scoring import rank_candidates
@@ -34,7 +34,11 @@ def compose_from_candidates(
     campaign = load_campaign(campaign_path)
     ranked = rank_candidates(candidates, profile.get("preferred_events") or {})
     music = json.loads(music_analysis_path.read_text(encoding="utf-8"))
-    beats = [float(value) for value in music.get("beats") or []]
+    beats = loop_beats(
+        [float(value) for value in music.get("beats") or []],
+        float(music.get("duration_seconds") or 0.0),
+        17.5,
+    )
     first = build_slots(0.0, 7.2, beats, target=float(profile["clip_duration"]["preferred"]))
     second = build_slots(12.8, 17.5, beats, target=float(profile["clip_duration"]["preferred"]))
     visual = assign_candidates(first + second, ranked, max_per_source=2)
@@ -71,4 +75,3 @@ def file_digest(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
-

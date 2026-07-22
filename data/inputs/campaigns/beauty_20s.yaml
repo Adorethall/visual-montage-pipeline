@@ -1,5 +1,6 @@
 campaign_id: rednote_beauty_en_20s
 category: beauty
+supported_categories: [beauty, overall_makeup, cosmetics_recommendation]
 language: en-US
 market: Global
 duration_seconds: 20
@@ -33,7 +34,7 @@ voiceover:
   language: en-US
   voice: "female, young adult, natural, energetic, clear"
   speed: 1.0
-  text: Open Rednote and discover more beauty inspiration. Find makeup looks you love and save the tips you want to try anytime.
+  text: Open rednote for fresh beauty inspiration. Find looks you love and save your favorites.
   start_section: product_openpage
   start_offset_seconds: 0.15
   maximum_duration_seconds: 8.0
@@ -41,8 +42,18 @@ voiceover:
 
 cover:
   required: true
-  editable_title: true
+  editable_title: false
   font_asset_id: helvetica_now_display_black
+  image2:
+    enabled: true
+    task_key: gpt-image2
+    size: 1080x1920
+    quality: high
+    max_concurrency: 2
+    provider_max_concurrency: 2
+    request_timeout_seconds: 180
+    fail_open: true
+    style_direction: Trendy beauty editorial cover with premium, high-impact typography and restrained graphic accents.
   title_style:
     font_size: 14.0
     color: "#FFFFFF"
@@ -50,8 +61,8 @@ cover:
     auto_wrapping: true
     line_spacing: 2.0
     border_enabled: false
-    transform_y: -0.50
-    preview_center_y_ratio: 0.23
+    transform_y: -0.72
+    preview_center_y_ratio: 0.76
     shadow:
       color: "#000000"
       alpha: 0.58

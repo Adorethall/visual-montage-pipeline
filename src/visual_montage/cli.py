@@ -92,6 +92,11 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=Path("/Users/linying/Movies/JianyingPro/RednoteMedia"),
     )
+    batch_run.add_argument(
+        "--draft-batch-folder",
+        default="",
+        help="Weekly batch label, for example week_0720",
+    )
     batch_run.add_argument("--force-analysis", action="store_true")
     batch_run.add_argument("--force-audio", action="store_true")
     batch_run.add_argument("--cache-only", action="store_true")
@@ -208,6 +213,7 @@ def main(argv: list[str] | None = None) -> int:
             env_file=args.env_file.resolve(),
             drafts_root=args.drafts_root.resolve(),
             media_root=args.media_root.resolve(),
+            draft_batch_folder=args.draft_batch_folder,
             force_analysis=args.force_analysis,
             force_audio=args.force_audio,
             cache_only=args.cache_only,

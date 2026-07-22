@@ -15,6 +15,32 @@ class Slot:
         return round(self.end - self.start, 3)
 
 
+def loop_beats(
+    beats: list[float], source_duration: float, timeline_end: float
+) -> list[float]:
+    """Repeat source-relative beats using the same period as looped BGM audio."""
+    duration = float(source_duration)
+    end = float(timeline_end)
+    if duration <= 0 or end <= 0:
+        return sorted({round(float(value), 3) for value in beats if 0 <= float(value) <= end})
+    source_beats = sorted({
+        float(value) for value in beats if 0 <= float(value) < duration
+    })
+    if not source_beats:
+        return []
+    output: set[float] = set()
+    cycle = 0
+    while cycle * duration < end:
+        offset = cycle * duration
+        for beat in source_beats:
+            value = beat + offset
+            if value > end:
+                break
+            output.add(round(value, 3))
+        cycle += 1
+    return sorted(output)
+
+
 def build_slots(start: float, end: float, beats: list[float], target: float = 1.4) -> list[Slot]:
     points = sorted({round(start, 3), round(end, 3), *(round(x, 3) for x in beats if start < x < end)})
     slots: list[Slot] = []

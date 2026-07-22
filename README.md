@@ -60,6 +60,7 @@ pixi run visual-montage batch-run \
 --cache-only              禁止远程分析，只允许使用缓存
 --voiceover-mode cached   优先复用TTS缓存
 --voiceover-mode regenerate 强制重生成TTS
+--draft-batch-folder week_0720 按周标记剪映草稿，并生成周归档文件夹
 --music-analysis FILE     不自动选歌，改用指定BGM分析文件
 --voiceover-audio FILE    不生成TTS，改用指定口播文件
 ```
@@ -122,7 +123,36 @@ BGM ducking：-7 dB
 
 ## 封面
 
-系统从完整素材和最终高光中选择主体清晰、有张力且有标题空间的一帧，输出 `cover-clean.jpg`、`cover-preview.jpg` 和 `cover.json`。剪映计划使用底图和原生文字段，标题保持可编辑；中文标题限制6–16字、最多两行，并必须由视频主题支持。
+系统从最终高光中选择主体清晰、有张力且有标题空间的一帧，标题优先从当前
+Profile的 `batch_generation.cover_titles` 选择，然后将原始帧和精确标题交给
+GPT Image 2完成封面排版。提交前先把注册表中的准确PNG Logo合成到
+`cover-image2-input.png`，提示词要求锁定Logo并保留左上品牌安全区。成功时输出
+`cover-image2.png`，剪映直接使用这张带标题和Logo的封面，不再重复添加
+`CoverTitle`或封面Logo层。`cover-clean.jpg` 始终保留，Image2失败且Campaign
+设置 `fail_open: true` 时，会回退到本地白字黑影封面。
+
+Image2使用Rings CLI认证，不需要在项目 `.env` 重复填写密钥。首次使用前运行：
+
+```bash
+rings auth login
+```
+
+Campaign配置：
+
+```yaml
+cover:
+  editable_title: false
+  image2:
+    enabled: true
+    task_key: gpt-image2
+    size: 1080x1920
+    quality: high
+    request_timeout_seconds: 1800
+    fail_open: true
+```
+
+生成结果按“原始帧内容 + 标题 + Image2配置”缓存到
+`data/cache/covers/image2/`；相同封面输入再次运行时不会重复调用Image2。
 
 ## Logo包装顺序
 

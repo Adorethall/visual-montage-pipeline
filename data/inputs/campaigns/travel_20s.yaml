@@ -33,7 +33,7 @@ voiceover:
   language: en-US
   voice: "female, young adult, american accent, natural, energetic, warm, clear"
   speed: 1.0
-  text: Open Rednote and discover travel inspiration for your next adventure. Find destinations, itineraries, and local tips, then save your favorites for later.
+  text: Open rednote for fresh travel inspiration. Find places you love and save your favorites.
   start_section: product_openpage
   start_offset_seconds: 0.15
   maximum_duration_seconds: 8.0
@@ -41,8 +41,18 @@ voiceover:
 
 cover:
   required: true
-  editable_title: true
+  editable_title: false
   font_asset_id: helvetica_now_display_black
+  image2:
+    enabled: true
+    task_key: gpt-image2
+    size: 1080x1920
+    quality: high
+    max_concurrency: 2
+    provider_max_concurrency: 2
+    request_timeout_seconds: 180
+    fail_open: true
+    style_direction: Aspirational travel editorial cover with cinematic energy, clean hierarchy, and bold destination-led typography.
   title_style:
     font_size: 14.0
     color: "#FFFFFF"
@@ -50,8 +60,8 @@ cover:
     auto_wrapping: true
     line_spacing: 2.0
     border_enabled: false
-    transform_y: -0.50
-    preview_center_y_ratio: 0.23
+    transform_y: -0.72
+    preview_center_y_ratio: 0.76
     shadow:
       color: "#000000"
       alpha: 0.58

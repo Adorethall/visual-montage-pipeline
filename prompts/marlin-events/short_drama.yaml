@@ -1,0 +1,13 @@
+query_groups:
+  - id: confrontation
+    normal: "dramatic confrontation, argument escalation, physical blocking, or tense face-off"
+    strict: "two or more characters in a visibly intense confrontation"
+    broad: "visually obvious interpersonal conflict or tense encounter"
+  - id: emotional_reaction
+    normal: "strong visible emotional reaction such as shock, anger, fear, crying, or joy"
+  - id: reveal_twist
+    normal: "visual reveal, sudden discovery, identity reveal, unexpected entrance, or plot twist reaction"
+  - id: decisive_action
+    normal: "decisive story-changing action such as leaving, rejecting, rescuing, embracing, or intervening"
+  - id: relationship_payoff
+    normal: "visible reunion, reconciliation, separation, protection, or relationship payoff"

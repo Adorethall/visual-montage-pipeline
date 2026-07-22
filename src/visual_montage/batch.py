@@ -2,14 +2,27 @@ from __future__ import annotations
 
 import itertools
 import json
+import re
 from pathlib import Path
 
 from .candidate_registry import CandidateRegistry
 from .io import load_campaign, load_yaml, write_json
 from .models import TimelineItem, VisualCandidate
-from .montage import Slot, build_slots, validate_timeline
+from .montage import Slot, build_slots, loop_beats, validate_timeline
 from .packaging import fixed_package_items, validate_package
 from .scoring import rank_candidates
+
+
+def _author_key(candidate: VisualCandidate) -> str:
+    """Return a stable author key from the manifest-style source filename."""
+    stem = Path(candidate.video_path).stem
+    starred = re.search(r"(@[^*]+)\*", stem)
+    if starred:
+        return starred.group(1).strip()
+    underscored = re.search(r"_(@[^_]+)_", stem)
+    if underscored:
+        return underscored.group(1).strip()
+    return candidate.video_id
 
 
 def _select_for_slots(
@@ -24,17 +37,91 @@ def _select_for_slots(
     previous_batch_penalty: float,
     historical_use_penalty: float,
     opening_sources: set[str],
+    target_source_videos: int = 0,
+    _allowed_sources: set[str] | None = None,
+    author_grouping: dict | None = None,
 ) -> list[VisualCandidate]:
+    if target_source_videos > 0 and _allowed_sources is None:
+        available_sources = sorted({
+            candidate.video_id
+            for candidate in candidates
+            if candidate_global_counts.get(candidate.candidate_id, 0)
+            < candidate_max_global_uses
+            and not history.get(candidate.candidate_id, {}).get("reserved")
+            and source_global_counts.get(candidate.video_id, 0)
+            < source_max_global_uses
+        })
+        combinations = list(itertools.combinations(
+            available_sources, target_source_videos
+        ))
+        combinations.sort(key=lambda values: (
+            sum(source_global_counts.get(value, 0) for value in values),
+            max((source_global_counts.get(value, 0) for value in values), default=0),
+            -sum(
+                1
+                for candidate in candidates
+                if candidate.video_id in values
+                and candidate_global_counts.get(candidate.candidate_id, 0)
+                < candidate_max_global_uses
+            ),
+            values,
+        ))
+        best: tuple[list[VisualCandidate], dict[str, int], dict[str, int]] | None = None
+        for source_group in combinations:
+            candidate_counts_copy = dict(candidate_global_counts)
+            source_counts_copy = dict(source_global_counts)
+            selected = _select_for_slots(
+                slots,
+                candidates,
+                history,
+                candidate_counts_copy,
+                source_counts_copy,
+                max_per_source,
+                candidate_max_global_uses,
+                source_max_global_uses,
+                previous_batch_penalty,
+                historical_use_penalty,
+                opening_sources,
+                target_source_videos,
+                set(source_group),
+                author_grouping,
+            )
+            distinct = len({item.video_id for item in selected})
+            if best is None or (len(selected), distinct) > (
+                len(best[0]), len({item.video_id for item in best[0]})
+            ):
+                best = (selected, candidate_counts_copy, source_counts_copy)
+            if len(selected) == len(slots) and distinct == target_source_videos:
+                best = (selected, candidate_counts_copy, source_counts_copy)
+                break
+        if best is None:
+            return []
+        candidate_global_counts.clear()
+        candidate_global_counts.update(best[1])
+        source_global_counts.clear()
+        source_global_counts.update(best[2])
+        return best[0]
+
     chosen: list[VisualCandidate] = []
     local_counts: dict[str, int] = {}
     local_candidates: set[str] = set()
     last_video = ""
     last_event = ""
+    author_grouping = author_grouping or {}
+    group_authors = bool(author_grouping.get("enabled", False))
+    avoid_cross_section_reuse = bool(
+        author_grouping.get("avoid_cross_section_reuse", False)
+    )
+    current_author = ""
+    current_section = ""
+    previous_section_authors: set[str] = set()
+    section_authors: set[str] = set()
     for index, slot in enumerate(slots):
         eligible = [
             candidate
             for candidate in candidates
-            if candidate.candidate_id not in local_candidates
+            if (_allowed_sources is None or candidate.video_id in _allowed_sources)
+            and candidate.candidate_id not in local_candidates
             and candidate_global_counts.get(candidate.candidate_id, 0)
             < candidate_max_global_uses
             and not history.get(candidate.candidate_id, {}).get("reserved")
@@ -42,6 +129,35 @@ def _select_for_slots(
             and source_global_counts.get(candidate.video_id, 0) < source_max_global_uses
             and candidate.preferred_trim.duration >= slot.duration * 0.8
         ]
+        if target_source_videos > 0:
+            selected_sources = set(local_counts)
+            if len(selected_sources) >= target_source_videos:
+                eligible = [
+                    candidate
+                    for candidate in eligible
+                    if candidate.video_id in selected_sources
+                ]
+            elif not group_authors:
+                new_source_candidates = [
+                    candidate
+                    for candidate in eligible
+                    if candidate.video_id not in selected_sources
+                ]
+                if new_source_candidates:
+                    eligible = new_source_candidates
+            else:
+                # Preserve author runs while there is still enough timeline left
+                # to introduce the requested number of distinct source videos.
+                missing_sources = target_source_videos - len(selected_sources)
+                remaining_slots = len(slots) - index
+                if remaining_slots <= missing_sources:
+                    new_source_candidates = [
+                        candidate
+                        for candidate in eligible
+                        if candidate.video_id not in selected_sources
+                    ]
+                    if new_source_candidates:
+                        eligible = new_source_candidates
         if index == 0:
             different_openers = [
                 candidate for candidate in eligible if candidate.video_id not in opening_sources
@@ -50,6 +166,30 @@ def _select_for_slots(
                 eligible = different_openers
         if not eligible:
             break
+
+        section = "first_montage" if slot.start < 7.2 else "second_montage"
+        if group_authors and section != current_section:
+            if current_section:
+                previous_section_authors.update(section_authors)
+            current_section = section
+            current_author = ""
+            section_authors = set()
+        if group_authors and avoid_cross_section_reuse and previous_section_authors:
+            fresh_author_candidates = [
+                candidate
+                for candidate in eligible
+                if _author_key(candidate) not in previous_section_authors
+            ]
+            if fresh_author_candidates:
+                eligible = fresh_author_candidates
+        if group_authors and current_author:
+            same_author_candidates = [
+                candidate
+                for candidate in eligible
+                if _author_key(candidate) == current_author
+            ]
+            if same_author_candidates:
+                eligible = same_author_candidates
 
         def adjusted(candidate: VisualCandidate) -> tuple:
             record = history.get(candidate.candidate_id) or {}
@@ -62,7 +202,13 @@ def _select_for_slots(
             )
             return (
                 candidate_global_counts.get(candidate.candidate_id, 0),
-                candidate.video_id == last_video,
+                source_global_counts.get(candidate.video_id, 0),
+                local_counts.get(candidate.video_id, 0),
+                abs(candidate.preferred_trim.duration - slot.duration),
+                (
+                    candidate.video_id == last_video
+                    if not group_authors else False
+                ),
                 candidate.event == last_event,
                 -score,
             )
@@ -80,6 +226,9 @@ def _select_for_slots(
         )
         last_video = candidate.video_id
         last_event = candidate.event
+        if group_authors:
+            current_author = _author_key(candidate)
+            section_authors.add(current_author)
     return chosen
 
 
@@ -167,7 +316,11 @@ def batch_compose(
     config = profile.get("batch_generation") or {}
     diversity = config.get("diversity") or {}
     music = json.loads(music_analysis_path.read_text(encoding="utf-8"))
-    beats = [float(value) for value in music.get("beats") or []]
+    beats = loop_beats(
+        [float(value) for value in music.get("beats") or []],
+        float(music.get("duration_seconds") or 0.0),
+        17.5,
+    )
     slots = build_slots(
         0.0,
         7.2,
@@ -205,6 +358,8 @@ def batch_compose(
                 float(diversity.get("previous_batch_penalty", 1.0)),
                 float(diversity.get("historical_use_penalty", 0.3)),
                 opening_sources,
+                max(0, int(diversity.get("source_videos_per_creative", 0))),
+                author_grouping=dict(config.get("author_grouping") or {}),
             )
             if chosen:
                 opening_sources.add(chosen[0].video_id)
@@ -219,6 +374,15 @@ def batch_compose(
             if len(chosen) < len(slots):
                 errors.append(
                     f"insufficient unique candidates: {len(chosen)}/{len(slots)}"
+                )
+            target_sources = max(
+                0, int(diversity.get("source_videos_per_creative", 0))
+            )
+            selected_source_count = len({item.video_id for item in chosen})
+            if target_sources and selected_source_count != target_sources:
+                errors.append(
+                    "insufficient distinct source videos: "
+                    f"{selected_source_count}/{target_sources}"
                 )
             plan = {
                 "schema_version": "1.0",

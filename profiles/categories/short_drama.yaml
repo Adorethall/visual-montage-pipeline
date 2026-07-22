@@ -1,0 +1,146 @@
+schema_version: "1.0"
+category_id: short_drama
+display_name: 短剧
+parent_category: drama
+aliases: [短剧, 剧情, 微短剧, short drama, mini drama]
+
+preferred_events:
+  reveal_or_twist: 1.0
+  confrontation_peak: 0.98
+  strong_emotional_reaction: 0.95
+  decisive_action: 0.92
+  relationship_payoff: 0.88
+  dramatic_hook: 0.86
+  cinematic_scene_reveal: 0.76
+penalized_events:
+  static_dialogue: 0.78
+  context_dependent_line: 0.72
+  establishing_filler: 0.58
+  graphic_or_unsafe_action: 1.0
+
+clip_duration: {minimum: 0.9, preferred: 1.8, maximum: 3.4}
+opening_events: [reveal_or_twist, confrontation_peak, dramatic_hook]
+cover_events: [strong_emotional_reaction, reveal_or_twist, confrontation_peak]
+cover_title_strategies: [dramatic_question, emotional_hook, twist_tease]
+
+cover_selection:
+  gemma_enabled: true
+  max_candidates: 5
+  samples_per_candidate: 4
+  dedupe_hash_distance: 10
+  timeout_seconds: 120
+
+gemma_review:
+  prompt_path: prompts/gemma-review/short_drama.md
+  api_max_attempts: 3
+  api_max_concurrency: 5
+  api_retry_delays_seconds: [2.0, 5.0]
+  minimum_candidates_per_video: 3
+  candidate_topup_attempts: 2
+  hard_filters:
+    reject_chinese_subtitles: true
+  candidate_count: {minimum: 3, maximum: 8}
+  candidate_duration: {minimum: 1.0, preferred: 2.2, maximum: 4.0}
+  default_event: strong_emotional_reaction
+  events:
+    dramatic_hook:
+      label: 视觉剧情钩子
+      keywords: [异常场面, 紧迫开场, 人物突然出现, dramatic hook, urgent opening]
+    confrontation_peak:
+      label: 对峙或冲突高点
+      keywords: [对峙, 争执升级, 阻拦, confrontation, conflict peak]
+    strong_emotional_reaction:
+      label: 强烈情绪反应
+      keywords: [震惊, 愤怒, 哭泣, 恐惧, 欣喜, emotional reaction, shocked reaction]
+    reveal_or_twist:
+      label: 揭示或反转
+      keywords: [真相揭示, 身份揭晓, 突然发现, 反转, reveal, plot twist]
+    decisive_action:
+      label: 改变局面的关键动作
+      keywords: [离开, 拒绝, 拥抱, 救援, 夺回, decisive action, turning-point action]
+    relationship_payoff:
+      label: 人物关系结果
+      keywords: [和解, 重逢, 分离, 保护, 告白回应, reunion, reconciliation, relationship payoff]
+    cinematic_scene_reveal:
+      label: 有氛围的场景揭示
+      keywords: [人物入场, 环境揭示, 电影感场景, character entrance, cinematic reveal]
+  positive_visual_keywords:
+    - visually self-contained dramatic beat
+    - clear change in emotion or situation
+    - readable facial reaction
+    - visible confrontation or decisive action
+    - strong reveal or payoff
+    - cinematic composition with clear subjects
+    - understandable without relying on dialogue
+  negative_visual_keywords:
+    - static dialogue with no visible change
+    - context-dependent spoken line
+    - long setup with no payoff
+    - repetitive reaction
+    - Chinese dialogue subtitles
+    - subtitles covering faces
+    - blurred or obstructed subjects
+    - incomplete action or reaction
+    - explicit gore or graphic injury
+    - dangerous act presented as imitation-worthy
+
+marlin_recall:
+  enabled: true
+  minimum_video_duration_seconds: 30.0
+  maximum_video_duration_seconds: 120.0
+  segment_duration_seconds: 115.0
+  segment_overlap_seconds: 5.0
+  query_path: prompts/marlin-events/short_drama.yaml
+  query_variant: normal
+  max_query_groups: 5
+  gemma_review_context_seconds: 2.0
+  gemma_review_max_window_seconds: 14.0
+  gemma_review_max_windows: 12
+  gemma_review_max_recall_span_seconds: 36.0
+  fail_open: true
+  upload_prefix: visual-montage/marlin-inputs
+  presigned_url_expires_seconds: 86400
+
+contact_sheet:
+  enabled: true
+  columns: 4
+  thumbnail_width: 320
+  thumbnail_height: 480
+  label_height: 86
+  jpeg_quality: 88
+  background_color: "#151515"
+  label_color: "#F5F5F5"
+  secondary_label_color: "#B8B8B8"
+
+audio_bgm_analysis:
+  enabled: true
+  minimum_bgm_duration_seconds: 5.0
+  remote_enrichment: true
+  fail_open: true
+  target_window_seconds: 20
+  allowed_audio_types: [instrumental, song_with_lyrics, music_with_spoken_overlay]
+  minimum_music_score: 0.66
+  maximum_speech_risk: 0.18
+  minimum_separation_quality: 0.75
+  preferred_bpm: {minimum: 88, target: 108, maximum: 128}
+  same_bgm_max_per_batch: 2
+
+batch_generation:
+  cover_titles:
+    - Wait For The Plot Twist
+    - You Won't See This Coming
+    - One Moment Changes Everything
+    - The Drama Gets Real
+    - What Happens Next?
+  history:
+    enabled: true
+    registry_path: data/catalog/candidate-registry.sqlite
+  diversity:
+    candidate_max_global_uses_per_batch: 4
+    source_videos_per_creative: 3
+    source_max_per_video: 4
+    source_max_global_uses: 12
+    previous_batch_penalty: 0.6
+    historical_use_penalty: 0.15
+    maximum_pairwise_candidate_overlap_ratio: 0.2
+    minimum_never_used_candidate_ratio: 0.8

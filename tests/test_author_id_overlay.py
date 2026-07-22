@@ -2,7 +2,9 @@ from PIL import Image, ImageDraw
 
 from visual_montage.batch_runner import (
     _author_from_video_path,
+    _jianying_draft_name,
     _logo_aligned_transform_y,
+    _select_cover_candidate,
 )
 from visual_montage.author_overlay import (
     author_center_transform_x,
@@ -37,6 +39,65 @@ def test_preserves_underscores_inside_author() -> None:
 
 def test_missing_author_is_empty() -> None:
     assert _author_from_video_path("/materials/plain-video.mp4") == ""
+
+
+def test_jianying_draft_name_uses_first_timeline_source() -> None:
+    plan = {
+        "campaign": {"category": "anime", "language": "en-US"},
+        "selected_candidates": [
+            {
+                "video_id": "anime_69bb9627000000002301cf17",
+                "video_path": (
+                    "/materials/Drama测试-二次元_@BigMommmm_北美,欧洲_英语_"
+                    "69bb9627000000002301cf17.mp4"
+                ),
+            },
+            {
+                "video_id": "anime_697df60e000000001a035622",
+                "video_path": "/materials/ignored.mp4",
+            },
+        ],
+    }
+    assert _jianying_draft_name(plan, 1) == (
+        "Drama测试-二次元-69bb9627000000002301cf17-英语-001"
+    )
+
+
+def test_jianying_draft_name_supports_star_author_delimiter() -> None:
+    plan = {
+        "campaign": {"category": "beauty", "language": "zh-CN"},
+        "selected_candidates": [
+            {
+                "video_id": "beauty_685a993f000000001c036a75",
+                "video_path": (
+                    "/materials/彩妆测试-整体妆容*@作者*北美_英语_"
+                    "685a993f000000001c036a75.mp4"
+                ),
+            }
+        ],
+    }
+    assert _jianying_draft_name(plan, 12) == (
+        "彩妆测试-整体妆容-685a993f000000001c036a75-中文（简体）-012"
+    )
+
+
+def test_cover_candidate_always_uses_first_timeline_highlight() -> None:
+    selected = [
+        {
+            "video_id": "high_score_application",
+            "event": "application",
+            "scores": {"aesthetic": 1.0, "subject_visibility": 1.0, "payoff": 1.0},
+            "final_score": 1.0,
+        },
+        {
+            "video_id": "preferred_reveal",
+            "event": "final_look_reveal",
+            "scores": {"aesthetic": 0.85, "subject_visibility": 0.9, "payoff": 0.9},
+            "final_score": 0.9,
+        },
+    ]
+    chosen = _select_cover_candidate(selected, {"cover_events": ["final_look_reveal"]})
+    assert chosen["video_id"] == "high_score_application"
 
 
 def test_author_height_aligns_with_visible_logo_center(tmp_path) -> None:

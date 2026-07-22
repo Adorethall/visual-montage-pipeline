@@ -1,5 +1,5 @@
-campaign_id: rednote_food_en_20s
-category: food
+campaign_id: rednote_anime_en_20s
+category: anime
 language: en-US
 market: Global
 duration_seconds: 20
@@ -9,7 +9,7 @@ package_mode: standard_ad
 product_demo:
   required: true
   openpage_asset_id: rednote_openpage_zh_vertical
-  recording_asset_id: rednote_food_recording_en
+  recording_asset_id: rednote_anime_recording_en
 
 brand:
   logo_asset_id: rednote_logo_white_vertical
@@ -20,24 +20,20 @@ brand:
   logo_end_guard_seconds: 0.0
 
 copy:
-  hook: What are you craving today?
-  brand_message: Discover endless food inspiration
+  hook: Looking for more anime inspiration?
+  brand_message: Discover anime-inspired looks and creative ideas
   cta: Download now
   mandatory_copy: []
-  prohibited_claims:
-    - best food ever
-    - #1 recipe
-    - guaranteed results
-    - lose weight fast
+  prohibited_claims: [the best anime content, guaranteed viral inspiration]
 
 voiceover:
   required: true
   provider: omnivoice
   fallback_provider: voxcpm
   language: en-US
-  voice: "female, young adult, natural, energetic, warm, clear"
+  voice: "female, young adult, american accent, natural, energetic, playful, clear"
   speed: 1.0
-  text: Openrednote for delicious food inspiration. Find ideas you love and save your favorites.
+  text: Open rednote for anime inspiration. Find styles you love and save your favorites.
   start_section: product_openpage
   start_offset_seconds: 0.15
   maximum_duration_seconds: 8.0
@@ -46,17 +42,18 @@ voiceover:
 cover:
   required: true
   editable_title: false
-  font_asset_id: douyin_sans_bold_zh
+  font_asset_id: helvetica_now_display_black
   image2:
-    enabled: true
+    enabled: false
     task_key: gpt-image2
     size: 1080x1920
     quality: high
     max_concurrency: 2
     provider_max_concurrency: 2
+    submission_retry_delays_seconds: [15, 30, 60, 120]
     request_timeout_seconds: 180
     fail_open: true
-    style_direction: Appetizing food editorial cover with energetic typography, warm accents, and an uncluttered premium layout.
+    style_direction: Dynamic anime editorial cover with energetic composition, bold typography, and strict preservation of the source character and scene.
   title_style:
     font_size: 14.0
     color: "#FFFFFF"

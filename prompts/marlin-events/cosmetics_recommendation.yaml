@@ -1,0 +1,13 @@
+query_groups:
+  - id: product_closeup
+    normal: "cosmetic product close-up with packaging or product form clearly visible"
+    strict: "makeup product clearly presented close to the camera"
+    broad: "visually clear cosmetic product presentation"
+  - id: opening_applicator
+    normal: "opening a cosmetic product, revealing applicator, wand, pump, or product texture"
+  - id: texture_swatch
+    normal: "cosmetic texture demonstration, hand swatch, arm swatch, or visible color payoff"
+  - id: application_result
+    normal: "applying makeup product with an immediate visible result on face, eyes, lips, or skin"
+  - id: product_and_result
+    normal: "person holding cosmetic product while clearly showing the finished result"

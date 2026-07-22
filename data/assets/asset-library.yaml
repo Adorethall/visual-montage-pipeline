@@ -84,6 +84,34 @@ product_recordings:
     features: [result_browsing]
     requires_safe_trim_review: true
 
+  - asset_id: rednote_short_drama_recording_en
+    type: product_recording
+    path: data/assets/product-recordings/短剧.mp4
+    category: short_drama
+    language: en-US
+    aspect_ratio: "9:16"
+    width: 1180
+    height: 2098
+    fps: 30
+    duration_seconds: 10.600
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [search, result_browsing]
+    requires_safe_trim_review: true
+
+  - asset_id: rednote_anime_recording_en
+    type: product_recording
+    path: data/assets/product-recordings/二次元.mp4
+    category: anime
+    language: en-US
+    aspect_ratio: "9:16"
+    width: 1180
+    height: 2098
+    fps: 30
+    duration_seconds: 12.678
+    required_openpage_asset_id: rednote_openpage_zh_vertical
+    features: [search, result_browsing]
+    requires_safe_trim_review: true
+
 brand_assets:
   - asset_id: rednote_logo_white_vertical
     type: logo_overlay
@@ -197,5 +225,23 @@ category_defaults:
     cover_logo_asset_id: rednote_logo_white_vertical
     endcard_asset_id: rednote_endcard_vertical
     cover_font_asset_id: douyin_sans_bold_zh
+
+  short_drama:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_short_drama_recording_en
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: helvetica_now_display_black
+
+  anime:
+    product_openpage_asset_id: rednote_openpage_zh_vertical
+    product_recording_asset_id: rednote_anime_recording_en
+    logo_asset_id: rednote_logo_white_vertical
+    animated_logo_asset_id: rednote_logo_white_vertical_animated
+    cover_logo_asset_id: rednote_logo_white_vertical
+    endcard_asset_id: rednote_endcard_vertical
+    cover_font_asset_id: helvetica_now_display_black
 
 known_gaps: []
